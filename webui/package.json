@@ -8,7 +8,7 @@
 		"build": "vite build --emptyOutDir",
 		"preview": "vite preview",
 		"connect-adb": "adb connect 192.168.1.106:5555",
-		"sync": "./sync-to-phone.sh"
+		"sync": "clear & ./sync-to-phone.sh"
 	},
 	"devDependencies": {
 		"vite": "^8.0.1"

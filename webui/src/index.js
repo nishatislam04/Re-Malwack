@@ -849,7 +849,9 @@ async function loadFile(fileType) {
 						return;
 					}
 					const checkboxes = list.querySelectorAll("md-checkbox");
-					checkboxes.forEach((cb) => cb.classList.add("show"));
+					checkboxes.forEach((cb) => {
+						cb.classList.add("show");
+					});
 					controlList.classList.add("show");
 					setupControlListListeners(list, fileType);
 					const checkbox = listItem.querySelector("md-checkbox");
@@ -1252,6 +1254,19 @@ function setupEventListener() {
 	document
 		.getElementById("query-search")
 		.addEventListener("click", () => handleQuery());
+
+	// query input
+	let queryModuleLoaded = false;
+	document
+		.getElementById("query-input")
+		.addEventListener("input", async (e) => {
+			if (!queryModuleLoaded) {
+				const module = await import("./modules/searchQuery.js");
+				window.querySearchButtonShow = module.querySearchButtonShow;
+				queryModuleLoaded = true;
+			}
+			window.querySearchButtonShow(e.target.value.trim().length > 0);
+		});
 }
 
 // Function to handle festival themes
@@ -1293,9 +1308,9 @@ function setupFestivalThemes() {
 // Initial load
 document.addEventListener("DOMContentLoaded", async () => {
 	await Promise.all([setupTheme()]);
-	document
-		.querySelectorAll("[unresolved]")
-		.forEach((el) => el.removeAttribute("unresolved"));
+	document.querySelectorAll("[unresolved]").forEach((el) => {
+		el.removeAttribute("unresolved");
+	});
 	checkMMRL();
 	setupPrank();
 	setupFestivalThemes();
@@ -1318,9 +1333,9 @@ document.querySelectorAll("md-dialog").forEach((dialog) => {
 	dialog.getOpenAnimation = () => {
 		const defaultAnim = defaultOpenAnim.call(dialog);
 		const customAnim = {};
-		Object.keys(defaultAnim).forEach(
-			(key) => (customAnim[key] = defaultAnim[key]),
-		);
+		Object.keys(defaultAnim).forEach((key) => {
+			customAnim[key] = defaultAnim[key];
+		});
 
 		customAnim.dialog = [
 			[
@@ -1345,9 +1360,9 @@ document.querySelectorAll("md-dialog").forEach((dialog) => {
 	dialog.getCloseAnimation = () => {
 		const defaultAnim = defaultCloseAnim.call(dialog);
 		const customAnim = {};
-		Object.keys(defaultAnim).forEach(
-			(key) => (customAnim[key] = defaultAnim[key]),
-		);
+		Object.keys(defaultAnim).forEach((key) => {
+			customAnim[key] = defaultAnim[key];
+		});
 
 		customAnim.dialog = [
 			[
