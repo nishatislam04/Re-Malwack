@@ -1,18 +1,20 @@
 {
-  "name": "re-malwack",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build --emptyOutDir",
-    "preview": "vite preview"
-  },
-  "devDependencies": {
-    "vite": "^8.0.1"
-  },
-  "dependencies": {
-    "@material/web": "^2.4.1",
-    "kernelsu-alt": "^3.1.1"
-  }
+	"name": "re-malwack",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite --host",
+		"build": "vite build --emptyOutDir",
+		"preview": "vite preview",
+		"connect-adb": "adb connect 192.168.1.106:5555",
+		"sync": "./sync-to-phone.sh"
+	},
+	"devDependencies": {
+		"vite": "^8.0.1"
+	},
+	"dependencies": {
+		"@material/web": "^2.4.1",
+		"kernelsu-alt": "^3.1.1"
+	}
 }
