@@ -1,316 +1,369 @@
-import { spawn, exec, toast } from 'kernelsu-alt';
-import '@material/web/all.js';
-import ReMalwareIcon from './assets/Re-Malware.svg';
+import { exec, spawn, toast } from "kernelsu-alt";
+import "@material/web/all.js";
+import ReMalwareIcon from "./assets/Re-Malware.svg";
 
 const basePath = "/data/adb/Re-Malwack";
 const modulePath = "/data/adb/modules/Re-Malwack";
-const CONFIG_PATH =`${basePath}/config.sh`;
+const CONFIG_PATH = `${basePath}/config.sh`;
 
 const filePaths = {
-    blacklist: 'blacklist.txt',
-    whitelist: 'whitelist.txt',
-    "custom-source": 'sources.txt',
-    "custom-rule": 'custom_rules.txt',
+	blacklist: "blacklist.txt",
+	whitelist: "whitelist.txt",
+	"custom-source": "sources.txt",
+	"custom-rule": "custom_rules.txt",
 };
 
 const festivals = [
-    {
-        id: 'christmas',
-        start: { month: 12, day: 1 }, // December 1
-        end: { month: 12, day: 31 }   // December 31
-    }
-    // {
-    //     id: 'halloween',
-    //     start: { month: 9, day: 25 }, // October 25
-    //     end: { month: 9, day: 31 }   // October 31
-    // }
+	{
+		id: "christmas",
+		start: { month: 12, day: 1 }, // December 1
+		end: { month: 12, day: 31 }, // December 31
+	},
+	// {
+	//     id: 'halloween',
+	//     start: { month: 9, day: 25 }, // October 25
+	//     end: { month: 9, day: 31 }   // October 31
+	// }
 ];
 
 let isShellRunning = false;
 
 // Link redirect
 const links = [
-    { element: 'telegram', url: 'https://t.me/Re_Malwack' },
-    { element: 'github', url: 'https://github.com/ZG089/Re-Malwack' },
-    { element: 'xda', url: 'https://xdaforums.com/t/re-malwack-revival-of-malwack-module.4690049/' },
-    { element: 'sponsor', url: 'https://buymeacoffee.com/zg089' }
+	{ element: "telegram", url: "https://t.me/Re_Malwack" },
+	{ element: "github", url: "https://github.com/ZG089/Re-Malwack" },
+	{
+		element: "xda",
+		url: "https://xdaforums.com/t/re-malwack-revival-of-malwack-module.4690049/",
+	},
+	{ element: "sponsor", url: "https://buymeacoffee.com/zg089" },
 ];
 
 let initAboutMenu = false;
 // Function to handle about menu
 function aboutMenu() {
-    const aboutOverlay = document.getElementById('about-dialog');
-    if (!initAboutMenu) {
-        initCredit();
-        initAboutMenu = true;
-    }
-    aboutOverlay.show();
+	const aboutOverlay = document.getElementById("about-dialog");
+	if (!initAboutMenu) {
+		initCredit();
+		initAboutMenu = true;
+	}
+	aboutOverlay.show();
 }
 
 // Get module version from module.prop
 async function getVersion() {
-    const versionMain = document.getElementById('version-text');
-    const versionBox = document.getElementById('test-version-box');
-    const versionText = document.getElementById('test-version-text');
+	const versionMain = document.getElementById("version-text");
+	const versionBox = document.getElementById("test-version-box");
+	const versionText = document.getElementById("test-version-text");
 
-    let displayHash = "";
+	let displayHash = "";
 
-    const result = await exec(`grep '^version=' "${modulePath}/module.prop" | cut -d'=' -f2`);
-    if (result.errno === 0) {
-        const [version, ...hashParts] = result.stdout.trim().split('-');
-        const hash = hashParts.join('-');
+	const result = await exec(
+		`grep '^version=' "${modulePath}/module.prop" | cut -d'=' -f2`,
+	);
+	if (result.errno === 0) {
+		const [version, ...hashParts] = result.stdout.trim().split("-");
+		const hash = hashParts.join("-");
 
-        versionMain.textContent = version || 'Unknown';
-        if (!hash) return;
-        displayHash = hash.replace(/^test \(/, '').replace(/\)$/, '');
-    } else if (import.meta.env.DEV) {
-        versionMain.textContent = "DEV";
-        displayHash = "DEVELOPMENT STAGE";
-    }
-    versionText.textContent = `You're using a test release: ${displayHash}`;
-    versionBox.classList.add('display-flex');
+		versionMain.textContent = version || "Unknown";
+		if (!hash) return;
+		displayHash = hash.replace(/^test \(/, "").replace(/\)$/, "");
+	} else if (import.meta.env.DEV) {
+		versionMain.textContent = "DEV";
+		displayHash = "DEVELOPMENT STAGE";
+	}
+	versionText.textContent = `You're using a test release: ${displayHash}`;
+	versionBox.classList.add("display-flex");
 }
 
 async function isZnhr() {
-    try {
-        const { errno } = await exec(`
+	try {
+		const { errno } = await exec(`
             znhr="/data/adb/modules/hostsredirect"
             [ -f "$znhr/module.prop" ] && [ ! -f "$znhr/disable" ]
         `);
-        return errno === 0;
-    } catch {
-        return false;
-    }
+		return errno === 0;
+	} catch {
+		return false;
+	}
 }
 
 async function checkMount() {
-    const result = await exec(`
+	const result = await exec(`
         system_hosts="$(cat /system/etc/hosts | wc -l)"
         module_hosts="$(cat ${modulePath}/system/etc/hosts | wc -l)"
         [ $system_hosts -eq $module_hosts ] || echo "error"
     `);
-    if (result.stdout.trim().includes("error") && !await isZnhr() || import.meta.env.DEV) {
-        document.getElementById('broken-mount-box').classList.add('display-flex');
-    }
+	if (
+		(result.stdout.trim().includes("error") && !(await isZnhr())) ||
+		import.meta.env.DEV
+	) {
+		document.getElementById("broken-mount-box").classList.add("display-flex");
+	}
 }
 
 // Function to check if running in MMRL
 async function checkMMRL() {
-    if (typeof $Re_Malwack !== 'undefined' && Object.keys($Re_Malwack).length > 0) {
-        // Set status bars theme based on device theme
-        try {
-            $Re_Malwack.setLightStatusBars(!window.matchMedia('(prefers-color-scheme: dark)').matches)
-        } catch (error) {
-            console.error("Error setting status bars theme:", error)
-        }
-    }
+	if (
+		typeof $Re_Malwack !== "undefined" &&
+		Object.keys($Re_Malwack).length > 0
+	) {
+		// Set status bars theme based on device theme
+		try {
+			$Re_Malwack.setLightStatusBars(
+				!window.matchMedia("(prefers-color-scheme: dark)").matches,
+			);
+		} catch (error) {
+			console.error("Error setting status bars theme:", error);
+		}
+	}
 }
 
 async function isPaused() {
-    const result = await exec(`[ -f "${basePath}/hosts.bak" ] && grep -q "^adblock_switch=1" "${basePath}/config.sh"`);
-    return result.errno === 0;
+	const result = await exec(
+		`[ -f "${basePath}/hosts.bak" ] && grep -q "^adblock_switch=1" "${basePath}/config.sh"`,
+	);
+	return result.errno === 0;
 }
 
 function formatNumber(numStr, isApril1st = false, includeLabel = false) {
-    let num = parseInt(numStr, 10);
-    if (isNaN(num)) return numStr;
-    
-    let formattedNum = num.toString();
-    if (num > 999999) {
-        formattedNum = (num / 1000000).toFixed(1) + 'M';
-    } else if (num > 9999) {
-        formattedNum = (num / 1000).toFixed(1) + 'K';
-    }
+	const num = parseInt(numStr, 10);
+	if (isNaN(num)) return numStr;
 
-    if (!includeLabel) return formattedNum;
+	let formattedNum = num.toString();
+	if (num > 999999) {
+		formattedNum = (num / 1000000).toFixed(1) + "M";
+	} else if (num > 9999) {
+		formattedNum = (num / 1000).toFixed(1) + "K";
+	}
 
-    const label = isApril1st ? "Allowed Ads" : "Blocked entries";
-    return `${formattedNum} ${label}`;
+	if (!includeLabel) return formattedNum;
+
+	const label = isApril1st ? "Allowed Ads" : "Blocked entries";
+	return `${formattedNum} ${label}`;
 }
 
 // Function to get working status
 async function getStatus() {
-    const statusElement = document.getElementById('status-text');
-    const disableBox = document.getElementById('disabled-box');
-    const disableText = document.getElementById('disable-text');
-    const result = await exec("cat /data/adb/Re-Malwack/counts/blocked_mod.count");
-    
-    // Check if it's april 1st
-    const now = new Date();
-    const isApril1st = (now.getMonth() === 3 && now.getDate() === 1);
+	const statusElement = document.getElementById("status-text");
+	const disableBox = document.getElementById("disabled-box");
+	const disableText = document.getElementById("disable-text");
+	const result = await exec(
+		"cat /data/adb/Re-Malwack/counts/blocked_mod.count",
+	);
 
-    const statusTitleElement = document.getElementById('status-title');
-    if (statusTitleElement) {
-        statusTitleElement.textContent = isApril1st ? "Allowed Ads" : "Blocked Entries";
-    }
+	// Check if it's april 1st
+	const now = new Date();
+	const isApril1st = now.getMonth() === 3 && now.getDate() === 1;
 
-    if (result.errno === 0) {
-        let status = result.stdout.trim();
-        if (parseInt(status) === 0) {
-            const pause = await isPaused();
-            disableText.textContent = pause ? "Protection is paused" : "Protection is disabled due to reset";
-            disableBox.classList.add('display-flex');
-            statusElement.textContent = '-';
-            getlastUpdated(false);
-            return;
-        }
-        statusElement.textContent = formatNumber(status, isApril1st, false);
-        disableBox.classList.remove('display-flex');
-    } else if (import.meta.env.DEV) {
-        statusElement.textContent = formatNumber(10, isApril1st, false);
-        disableBox.classList.add('display-flex');
-        disableText.textContent = "Protection is under development";
-    } else {
-        console.error("Error getting status:", result.stderr);
-    }
-    getlastUpdated();
+	const statusTitleElement = document.getElementById("status-title");
+	if (statusTitleElement) {
+		statusTitleElement.textContent = isApril1st
+			? "Allowed Ads"
+			: "Blocked Entries";
+	}
+
+	if (result.errno === 0) {
+		const status = result.stdout.trim();
+		if (parseInt(status) === 0) {
+			const pause = await isPaused();
+			disableText.textContent = pause
+				? "Protection is paused"
+				: "Protection is disabled due to reset";
+			disableBox.classList.add("display-flex");
+			statusElement.textContent = "-";
+			getlastUpdated(false);
+			return;
+		}
+		statusElement.textContent = formatNumber(status, isApril1st, false);
+		disableBox.classList.remove("display-flex");
+	} else if (import.meta.env.DEV) {
+		statusElement.textContent = formatNumber(10, isApril1st, false);
+		disableBox.classList.add("display-flex");
+		disableText.textContent = "Protection is under development";
+	} else {
+		console.error("Error getting status:", result.stderr);
+	}
+	getlastUpdated();
 }
 
 // Function to get last updated time of hosts file
 async function getlastUpdated(isEnable = true) {
-    const lastUpdatedElement = document.getElementById('last-update');
+	const lastUpdatedElement = document.getElementById("last-update");
 
-    if (!isEnable) {
-        lastUpdatedElement.textContent = '-';
-        return;
-    }
+	if (!isEnable) {
+		lastUpdatedElement.textContent = "-";
+		return;
+	}
 
-    const hostsFile = await isZnhr() ? `/data/adb/hostsredirect/hosts` : `${modulePath}/system/etc/hosts`;
-    const last = await exec(`date -r '${hostsFile}' '+%H %d/%m/%Y'`);
-    const now = await exec("date +'%H %d/%m/%Y'");
-    if (import.meta.env.DEV) {
-        last.stdout = "12 5/12/2026";
-        now.stdout = "12 12/12/2026";
-    }
-    if (last.stdout.trim() !== '' && now.stdout.trim() !== '') {
-        const [lastHour, lastDay, lastMonth, lastYear] = last.stdout.trim().split(/[ /]/);
-        const [nowHour, nowDay, nowMonth, nowYear] = now.stdout.trim().split(/[ /]/);
+	const hostsFile = (await isZnhr())
+		? `/data/adb/hostsredirect/hosts`
+		: `${modulePath}/system/etc/hosts`;
+	const last = await exec(`date -r '${hostsFile}' '+%H %d/%m/%Y'`);
+	const now = await exec("date +'%H %d/%m/%Y'");
+	if (import.meta.env.DEV) {
+		last.stdout = "12 5/12/2026";
+		now.stdout = "12 12/12/2026";
+	}
+	if (last.stdout.trim() !== "" && now.stdout.trim() !== "") {
+		const [lastHour, lastDay, lastMonth, lastYear] = last.stdout
+			.trim()
+			.split(/[ /]/);
+		const [nowHour, nowDay, nowMonth, nowYear] = now.stdout
+			.trim()
+			.split(/[ /]/);
 
-        // Convert to Date objects for accurate comparison
-        const lastDate = new Date(lastYear, parseInt(lastMonth) - 1, parseInt(lastDay), parseInt(lastHour));
-        const nowDate = new Date(nowYear, parseInt(nowMonth) - 1, parseInt(nowDay), parseInt(nowHour));
+		// Convert to Date objects for accurate comparison
+		const lastDate = new Date(
+			lastYear,
+			parseInt(lastMonth) - 1,
+			parseInt(lastDay),
+			parseInt(lastHour),
+		);
+		const nowDate = new Date(
+			nowYear,
+			parseInt(nowMonth) - 1,
+			parseInt(nowDay),
+			parseInt(nowHour),
+		);
 
-        const diffMs = nowDate - lastDate;
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+		const diffMs = nowDate - lastDate;
+		const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+		const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-        if (diffDays === 0) {
-            if (diffHours === 0) {
-                lastUpdatedElement.textContent = 'Just Now';
-            } else {
-                lastUpdatedElement.textContent = `${diffHours}h ago`;
-            }
-        } else if (diffDays === 1) {
-            lastUpdatedElement.textContent = 'Yesterday';
-        } else {
-            lastUpdatedElement.textContent = `${diffDays}d ago`;
-        }
-    } else {
-        console.error("Error getting last updated time:", last.stderr || now.stderr);
-        lastUpdatedElement.textContent = '-';
-    }
+		if (diffDays === 0) {
+			if (diffHours === 0) {
+				lastUpdatedElement.textContent = "Just Now";
+			} else {
+				lastUpdatedElement.textContent = `${diffHours}h ago`;
+			}
+		} else if (diffDays === 1) {
+			lastUpdatedElement.textContent = "Yesterday";
+		} else {
+			lastUpdatedElement.textContent = `${diffDays}d ago`;
+		}
+	} else {
+		console.error(
+			"Error getting last updated time:",
+			last.stderr || now.stderr,
+		);
+		lastUpdatedElement.textContent = "-";
+	}
 }
-
 
 // ===== Action Mode =====
 
 let actionMode = 0; // default to load properly
 
 function getStatusText() {
-    return actionMode === 1 ? "Pause & Resume" : "Update Hosts";
+	return actionMode === 1 ? "Pause & Resume" : "Update Hosts";
 }
 
 function updateActionModeLabel() {
-    const label = document.getElementById("action-mode-status");
-    label.classList.toggle("pause", actionMode === 1);
-    label.classList.toggle("update", actionMode === 0);
-    label.textContent = getStatusText();
+	const label = document.getElementById("action-mode-status");
+	label.classList.toggle("pause", actionMode === 1);
+	label.classList.toggle("update", actionMode === 0);
+	label.textContent = getStatusText();
 }
 
 function loadActionMode() {
-    exec(`grep '^action_mode=' ${CONFIG_PATH} | cut -d'=' -f2 || echo '0'`).then((result) => {
-        if (result.errno === 0) {
-            actionMode = parseInt(result.stdout, 10) === 0 ? 0 : 1;
-            updateActionModeLabel();
-        } else if (import.meta.env.DEV) {
-            actionMode = 0;
-            updateActionModeLabel();
-        }
-    });
+	exec(`grep '^action_mode=' ${CONFIG_PATH} | cut -d'=' -f2 || echo '0'`).then(
+		(result) => {
+			if (result.errno === 0) {
+				actionMode = parseInt(result.stdout, 10) === 0 ? 0 : 1;
+				updateActionModeLabel();
+			} else if (import.meta.env.DEV) {
+				actionMode = 0;
+				updateActionModeLabel();
+			}
+		},
+	);
 }
 
 function updateActionMode(mode) {
-    exec(`sed -i 's/^action_mode=.*/action_mode=${mode}/' ${CONFIG_PATH}`).then((result) => {
-        if (result.errno === 0 || import.meta.env.DEV) {
-            actionMode = mode;
-            updateActionModeLabel();
-            showPrompt(`Action Mode set to ${getStatusText()}`, true, 2000);
-        } else {
-            showPrompt("Failed to change Action Mode", false, 2000);
-        }
-    });
+	exec(`sed -i 's/^action_mode=.*/action_mode=${mode}/' ${CONFIG_PATH}`).then(
+		(result) => {
+			if (result.errno === 0 || import.meta.env.DEV) {
+				actionMode = mode;
+				updateActionModeLabel();
+				showPrompt(`Action Mode set to ${getStatusText()}`, true, 2000);
+			} else {
+				showPrompt("Failed to change Action Mode", false, 2000);
+			}
+		},
+	);
 }
 
 // Function to check block status for different site categories
 async function checkBlockStatus() {
-    try {
-        const result = await fetch('link/persistent_dir/config.sh').then(response => {
-            if (!response.ok) throw new Error('Config file not found');
-            return response.text();
-        });
-        const lines = result.split("\n");
+	try {
+		const result = await fetch("link/persistent_dir/config.sh").then(
+			(response) => {
+				if (!response.ok) throw new Error("Config file not found");
+				return response.text();
+			},
+		);
+		const lines = result.split("\n");
 
-        let blocklistCounts = {};
-        try {
-            const countsResult = await fetch('link/persistent_dir/counts/blocklists.counts').then(res => res.text());
-            countsResult.split('\n').forEach(line => {
-                const parts = line.split('|');
-                if (parts.length === 2) {
-                    blocklistCounts[parts[0].trim()] = parts[1].trim();
-                }
-            });
-        } catch (e) {
-            // ignore if counts file is not found
-        }
+		const blocklistCounts = {};
+		try {
+			const countsResult = await fetch(
+				"link/persistent_dir/counts/blocklists.counts",
+			).then((res) => res.text());
+			countsResult.split("\n").forEach((line) => {
+				const parts = line.split("|");
+				if (parts.length === 2) {
+					blocklistCounts[parts[0].trim()] = parts[1].trim();
+				}
+			});
+		} catch (e) {
+			// ignore if counts file is not found
+		}
 
-        // Check each block type
-        const now = new Date();
-        const isApril1st = (now.getMonth() === 3 && now.getDate() === 1);
-        const customBlock = document.querySelector('.custom-block');
-        customBlock.querySelectorAll('.list-item').forEach(container => {
-            const type = container.dataset.type;
-            const toggle = container.querySelector('md-switch');
-            const badge = document.getElementById(`badge-${type}`);
-            const blockLine = lines.find(line => line.trim().startsWith(`block_${type}=`));
-            
-            let isEnabled = false;
-            if (blockLine) {
-                isEnabled = blockLine.split('=')[1].trim() === '1';
-            }
-            toggle.selected = isEnabled;
+		// Check each block type
+		const now = new Date();
+		const isApril1st = now.getMonth() === 3 && now.getDate() === 1;
+		const customBlock = document.querySelector(".custom-block");
+		customBlock.querySelectorAll(".list-item").forEach((container) => {
+			const type = container.dataset.type;
+			const toggle = container.querySelector("md-switch");
+			const badge = document.getElementById(`badge-${type}`);
+			const blockLine = lines.find((line) =>
+				line.trim().startsWith(`block_${type}=`),
+			);
 
-            if (badge) {
-                const enabled = isEnabled && blocklistCounts[type] !== undefined;
-                badge.textContent = enabled ? formatNumber(blocklistCounts[type], isApril1st, true) : "0";
-                badge.classList.toggle('display-flex', enabled);
-            }
-        });
+			let isEnabled = false;
+			if (blockLine) {
+				isEnabled = blockLine.split("=")[1].trim() === "1";
+			}
+			toggle.selected = isEnabled;
 
-        // Check daily update status
-        const dailyUpdateToggle = document.getElementById('daily-update-toggle');
-        const dailyUpdateLine = lines.find(line => line.trim().startsWith('daily_update='));
-        if (dailyUpdateLine) {
-            const value = dailyUpdateLine.split('=')[1].trim();
-            dailyUpdateToggle.selected = value === '1';
-        } else {
-            dailyUpdateToggle.selected = false;
-        }
-    } catch (error) {
-        if (error.message === 'Config file not found') {
-            const success = await linkFile();
-            if (success) await checkBlockStatus();
-        }
-    }
+			if (badge) {
+				const enabled = isEnabled && blocklistCounts[type] !== undefined;
+				badge.textContent = enabled
+					? formatNumber(blocklistCounts[type], isApril1st, true)
+					: "0";
+				badge.classList.toggle("display-flex", enabled);
+			}
+		});
+
+		// Check daily update status
+		const dailyUpdateToggle = document.getElementById("daily-update-toggle");
+		const dailyUpdateLine = lines.find((line) =>
+			line.trim().startsWith("daily_update="),
+		);
+		if (dailyUpdateLine) {
+			const value = dailyUpdateLine.split("=")[1].trim();
+			dailyUpdateToggle.selected = value === "1";
+		} else {
+			dailyUpdateToggle.selected = false;
+		}
+	} catch (error) {
+		if (error.message === "Config file not found") {
+			const success = await linkFile();
+			if (success) await checkBlockStatus();
+		}
+	}
 }
 
 /**
@@ -320,555 +373,620 @@ async function checkBlockStatus() {
  * @returns {Promise<boolean>} - true if the command was successful
  */
 function performAction(commandOption, showTerminal = true) {
-    const terminal = document.querySelector('.terminal');
-    const terminalContent = document.getElementById('terminal-output-text');
-    const backBtn = document.getElementById('aciton-back-btn');
-    const closeBtn = document.querySelector('.close-terminal');
-    const loadingOverlay = document.getElementById('loading-overlay');
+	const terminal = document.querySelector(".terminal");
+	const terminalContent = document.getElementById("terminal-output-text");
+	const backBtn = document.getElementById("aciton-back-btn");
+	const closeBtn = document.querySelector(".close-terminal");
+	const loadingOverlay = document.getElementById("loading-overlay");
 
-    const closeTerminal = () => {
-        document.body.classList.remove('noscroll');
-        terminal.classList.remove('show');
-        terminalContent.innerHTML = "";
-        closeBtn.classList.remove('show');
-    }
+	const closeTerminal = () => {
+		document.body.classList.remove("noscroll");
+		terminal.classList.remove("show");
+		terminalContent.innerHTML = "";
+		closeBtn.classList.remove("show");
+	};
 
-    const appendOutput = (data, isError = false) => {
-        if (!showTerminal) return;
-        const newline = document.createElement('p');
-        newline.className = 'output-line';
-        if (isError) newline.classList.add('error');
-        newline.textContent = data;
-        terminalContent.appendChild(newline);
-        terminalContent.scrollTo({ top: terminalContent.scrollHeight, behavior: 'smooth' });
-    }
+	const appendOutput = (data, isError = false) => {
+		if (!showTerminal) return;
+		const newline = document.createElement("p");
+		newline.className = "output-line";
+		if (isError) newline.classList.add("error");
+		newline.textContent = data;
+		terminalContent.appendChild(newline);
+		terminalContent.scrollTo({
+			top: terminalContent.scrollHeight,
+			behavior: "smooth",
+		});
+	};
 
-    if (showTerminal) {
-        terminal.classList.add('show');
-        document.body.classList.add('noscroll');
-        backBtn.onclick = () => closeTerminal();
-        closeBtn.onclick = () => closeTerminal();
-    } else {
-        loadingOverlay.classList.add('show');
-    }
+	if (showTerminal) {
+		terminal.classList.add("show");
+		document.body.classList.add("noscroll");
+		backBtn.onclick = () => closeTerminal();
+		closeBtn.onclick = () => closeTerminal();
+	} else {
+		loadingOverlay.classList.add("show");
+	}
 
-    if (isShellRunning) return;
+	if (isShellRunning) return;
 
-    isShellRunning = true;
-    return new Promise((resolve) => {
-        const output = spawn('sh', [`${modulePath}/rmlwk.sh`, `${commandOption}`], { env: { MAGISKTMP: 'true', WEBUI: 'true' } });
-        output.stdout.on('data', (data) => appendOutput(data));
-        output.stderr.on('data', (data) => appendOutput(data, true));
-        output.on('exit', (code) => {
-            isShellRunning = false;
-            if (showTerminal) {
-                closeBtn.classList.add('show');
-            } else {
-                loadingOverlay.classList.remove('show');
-            }
-            getStatus();
-            checkBlockStatus();
-            updateAdblockSwtich();
-            resolve(code === 0);
-        });
-    });
+	isShellRunning = true;
+	return new Promise((resolve) => {
+		const output = spawn("sh", [`${modulePath}/rmlwk.sh`, `${commandOption}`], {
+			env: { MAGISKTMP: "true", WEBUI: "true" },
+		});
+		output.stdout.on("data", (data) => appendOutput(data));
+		output.stderr.on("data", (data) => appendOutput(data, true));
+		output.on("exit", (code) => {
+			isShellRunning = false;
+			if (showTerminal) {
+				closeBtn.classList.add("show");
+			} else {
+				loadingOverlay.classList.remove("show");
+			}
+			getStatus();
+			checkBlockStatus();
+			updateAdblockSwtich();
+			resolve(code === 0);
+		});
+	});
 }
 
 let setupResetDialogListener = false;
 
 // Function to reset hosts
 async function resetHostsFile() {
-    const resetDialog = document.getElementById("confirmation-dialog");
-    const cancelButton = document.getElementById("cancel-reset");
-    const resetButton = document.getElementById("confirm-reset");
+	const resetDialog = document.getElementById("confirmation-dialog");
+	const cancelButton = document.getElementById("cancel-reset");
+	const resetButton = document.getElementById("confirm-reset");
 
-    resetDialog.show();
+	resetDialog.show();
 
-    if (!setupResetDialogListener) {
-        cancelButton.onclick = () => resetDialog.close();
-        resetButton.onclick = () => {
-            resetDialog.close();
-            performAction("--reset");
-        }
-        setupResetDialogListener = true;
-    }
+	if (!setupResetDialogListener) {
+		cancelButton.onclick = () => resetDialog.close();
+		resetButton.onclick = () => {
+			resetDialog.close();
+			performAction("--reset");
+		};
+		setupResetDialogListener = true;
+	}
 }
 
 // Function to enable/disable daily update
 async function toggleDailyUpdate() {
-    const toggle = document.getElementById('daily-update-toggle');
-    const action = toggle.selected ? "enable" : "disable";
+	const toggle = document.getElementById("daily-update-toggle");
+	const action = toggle.selected ? "enable" : "disable";
 
-    const result = await performAction(`--auto-update ${action}`, false);
-    if (result) {
-        showPrompt(`Daily update ${action}d`, true);
-    } else {
-        showPrompt(`Failed to toggle daily update`, false);
-    }
+	const result = await performAction(`--auto-update ${action}`, false);
+	if (result) {
+		showPrompt(`Daily update ${action}d`, true);
+	} else {
+		showPrompt(`Failed to toggle daily update`, false);
+	}
 }
 
 // Function to export logs
 async function exportLogs() {
-    const result = await exec(`sh ${modulePath}/rmlwk.sh --export-logs --quiet`);
-    if (result.errno === 0) {
-        showPrompt(result.stdout.trim(), true, 3000);
-    } else {
-        console.error("Error exporting logs:", result.stderr);
-        showPrompt("Failed to export logs", false);
-    }
+	const result = await exec(`sh ${modulePath}/rmlwk.sh --export-logs --quiet`);
+	if (result.errno === 0) {
+		showPrompt(result.stdout.trim(), true, 3000);
+	} else {
+		console.error("Error exporting logs:", result.stderr);
+		showPrompt("Failed to export logs", false);
+	}
 }
-
 
 // Function to handle blocking/unblocking different site categories
 function setupCustomBlock() {
-    const customBlock = document.querySelector('.custom-block');
-    customBlock.querySelectorAll('.list-item').forEach(container => {
-        const toggle = container.querySelector('md-switch');
-        const type = container.dataset.type;
+	const customBlock = document.querySelector(".custom-block");
+	customBlock.querySelectorAll(".list-item").forEach((container) => {
+		const toggle = container.querySelector("md-switch");
+		const type = container.dataset.type;
 
-        toggle.addEventListener('change', () => {
-            const action = toggle.selected ? `--block-${type}` : `--block-${type} 0`;
-            performAction(action);
-        });
-    });
+		toggle.addEventListener("change", () => {
+			const action = toggle.selected ? `--block-${type}` : `--block-${type} 0`;
+			performAction(action);
+		});
+	});
 }
 
 // Function to show prompt
 function showPrompt(message, isSuccess = true, duration = 2000) {
-    const prompt = document.getElementById('prompt');
-    prompt.textContent = message;
-    prompt.classList.toggle('error', !isSuccess);
-    if (window.promptTimeout) {
-        clearTimeout(window.promptTimeout);
-    }
-    setTimeout(() => {
-        prompt.classList.add('show');
-        window.promptTimeout = setTimeout(() => {
-            prompt.classList.remove('show');
-        }, duration);
-    }, 10);
+	const prompt = document.getElementById("prompt");
+	prompt.textContent = message;
+	prompt.classList.toggle("error", !isSuccess);
+	if (window.promptTimeout) {
+		clearTimeout(window.promptTimeout);
+	}
+	setTimeout(() => {
+		prompt.classList.add("show");
+		window.promptTimeout = setTimeout(() => {
+			prompt.classList.remove("show");
+		}, duration);
+	}, 10);
 }
 
 // Function to handle add whitelist/blacklist/custom-rules
 function handleAdd(fileType) {
-    if (fileType === "custom-rule") {
-        const ipInput = document.getElementById('custom-rule-ip');
-        const domInput = document.getElementById('custom-rule-domain');
-        const ipValue = ipInput.value.trim();
-        const domValue = domInput.value.trim();
-        const addBtn = document.getElementById('custom-rule-add');
-        
-        if (ipValue === "" || domValue === "" || addBtn.disabled) return;
-        
-        addBtn.disabled = true;
-        const output = [];
-        const result = spawn('sh', [`${modulePath}/rmlwk.sh`, '--custom-rule', 'add', ipValue, domValue], { env: { WEBUI: 'true' } });
-        result.stdout.on('data', (data) => output.push(data));
-        result.on('exit', async (code) => {
-            addBtn.disabled = false;
-            const msg = output.length ? output[output.length - 1].trim() : (code === 0 ? "Success" : "Failed");
-            showPrompt(msg, code === 0);
-            if (code === 0) {
-                ipInput.value = "";
-                domInput.value = "";
-            }
-            await loadFile(fileType);
-            await getStatus();
-        });
-        return;
-    }
+	if (fileType === "custom-rule") {
+		const ipInput = document.getElementById("custom-rule-ip");
+		const domInput = document.getElementById("custom-rule-domain");
+		const ipValue = ipInput.value.trim();
+		const domValue = domInput.value.trim();
+		const addBtn = document.getElementById("custom-rule-add");
 
-    const addBtn = document.getElementById(`${fileType}-add`);
-    const inputElement = document.getElementById(`${fileType}-input`);
-    const inputValue = inputElement.value.trim();
-    const output = [];
+		if (ipValue === "" || domValue === "" || addBtn.disabled) return;
 
-    if (inputValue === "" || addBtn.disabled) return;
-    console.log(`Input value for ${fileType}: "${inputValue}"`);
+		addBtn.disabled = true;
+		const output = [];
+		const result = spawn(
+			"sh",
+			[`${modulePath}/rmlwk.sh`, "--custom-rule", "add", ipValue, domValue],
+			{ env: { WEBUI: "true" } },
+		);
+		result.stdout.on("data", (data) => output.push(data));
+		result.on("exit", async (code) => {
+			addBtn.disabled = false;
+			const msg = output.length
+				? output[output.length - 1].trim()
+				: code === 0
+					? "Success"
+					: "Failed";
+			showPrompt(msg, code === 0);
+			if (code === 0) {
+				ipInput.value = "";
+				domInput.value = "";
+			}
+			await loadFile(fileType);
+			await getStatus();
+		});
+		return;
+	}
 
-    if (fileType === "whitelist") {
-        performAction(`--whitelist add ${inputValue}`);
-        inputElement.value = "";
-        return;
-    }
+	const addBtn = document.getElementById(`${fileType}-add`);
+	const inputElement = document.getElementById(`${fileType}-input`);
+	const inputValue = inputElement.value.trim();
+	const output = [];
 
-    addBtn.disabled = true;
-    
-    // For custom-source, handle multiple arguments (domain and name)
-    const args = [];
-    if (fileType === "custom-source") {
-        args.push(`${modulePath}/rmlwk.sh`, `--${fileType}`, 'add', ...inputValue.split(/\s+/));
-    } else {
-        args.push(`${modulePath}/rmlwk.sh`, `--${fileType}`, 'add', `${inputValue}`);
-    }
+	if (inputValue === "" || addBtn.disabled) return;
+	console.log(`Input value for ${fileType}: "${inputValue}"`);
 
-    const result = spawn('sh', args, { env: { WEBUI: 'true' } });
-    result.stdout.on('data', (data) => output.push(data));
-    result.on('exit', async (code) => {
-        addBtn.disabled = false;
-        showPrompt(output[output.length - 1].trim(), code === 0);
-        if (code === 0) inputElement.value = "";
-        await loadFile(fileType);
-        await getStatus();
-    });
+	if (fileType === "whitelist") {
+		performAction(`--whitelist add ${inputValue}`);
+		inputElement.value = "";
+		return;
+	}
+
+	addBtn.disabled = true;
+
+	// For custom-source, handle multiple arguments (domain and name)
+	const args = [];
+	if (fileType === "custom-source") {
+		args.push(
+			`${modulePath}/rmlwk.sh`,
+			`--${fileType}`,
+			"add",
+			...inputValue.split(/\s+/),
+		);
+	} else {
+		args.push(
+			`${modulePath}/rmlwk.sh`,
+			`--${fileType}`,
+			"add",
+			`${inputValue}`,
+		);
+	}
+
+	const result = spawn("sh", args, { env: { WEBUI: "true" } });
+	result.stdout.on("data", (data) => output.push(data));
+	result.on("exit", async (code) => {
+		addBtn.disabled = false;
+		showPrompt(output[output.length - 1].trim(), code === 0);
+		if (code === 0) inputElement.value = "";
+		await loadFile(fileType);
+		await getStatus();
+	});
 }
 
 function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showPrompt("Copied to clipboard", true);
-    }).catch(() => {
-        showPrompt("Failed to copy to clipboard", false);
-    });
+	navigator.clipboard
+		.writeText(text)
+		.then(() => {
+			showPrompt("Copied to clipboard", true);
+		})
+		.catch(() => {
+			showPrompt("Failed to copy to clipboard", false);
+		});
 }
 
 // Function to handle query domain
 function handleQuery() {
-    const inputElement = document.getElementById('query-input');
-    const resultCard = document.getElementById('query-result-card');
-    const resultText = document.getElementById('query-result-text');
-    const inputValue = inputElement.value.trim();
+	const inputElement = document.getElementById("query-input");
+	const resultCard = document.getElementById("query-result-card");
+	const resultText = document.getElementById("query-result-text");
+	const inputValue = inputElement.value.trim();
 
-    if (inputValue === "") return;
+	if (inputValue === "") return;
 
-    inputElement.value = "";
-    resultText.textContent = "Querying...";
-    resultCard.classList.add('display-block');
+	inputElement.value = "";
+	resultText.textContent = "Querying...";
+	resultCard.classList.add("display-block");
 
-    const output = [];
-    const result = spawn('sh', [`${modulePath}/rmlwk.sh`, `--query-domain`, `${inputValue}`, `--quiet`], { env: { WEBUI: 'true' } });
-    result.stdout.on('data', (data) => output.push(data));
-    result.stderr.on('data', (data) => output.push(data));
-    result.on('exit', () => {
-        resultText.textContent = "";
-        output.forEach(line => {
-            const div = document.createElement('div');
-            div.textContent = line;
-            div.addEventListener('click', () => copyToClipboard(line));
-            resultText.appendChild(div);
-        })
-    });
+	const output = [];
+	const result = spawn(
+		"sh",
+		[`${modulePath}/rmlwk.sh`, `--query-domain`, `${inputValue}`, `--quiet`],
+		{ env: { WEBUI: "true" } },
+	);
+	result.stdout.on("data", (data) => output.push(data));
+	result.stderr.on("data", (data) => output.push(data));
+	result.on("exit", () => {
+		resultText.textContent = "";
+		output.forEach((line) => {
+			const div = document.createElement("div");
+			div.textContent = line;
+			div.addEventListener("click", () => copyToClipboard(line));
+			resultText.appendChild(div);
+		});
+	});
 }
 
 // Prevent input box blocked by keyboard
-const inputs = document.querySelectorAll('input');
-const focusClass = 'input-focused';
-inputs.forEach(input => {
-    input.addEventListener('focus', event => {
-        document.body.classList.add(focusClass);
-        setTimeout(() => {
-            const offsetAdjustment = window.innerHeight * 0.1;
-            const targetPosition = event.target.getBoundingClientRect().top + window.scrollY;
-            const adjustedPosition = targetPosition - (window.innerHeight / 2) + offsetAdjustment;
-            window.scrollTo({
-                top: adjustedPosition,
-                behavior: 'smooth',
-            });
-        }, 100);
-    });
-    input.addEventListener('blur', () => {
-        document.body.classList.remove(focusClass);
-    });
+const inputs = document.querySelectorAll("input");
+const focusClass = "input-focused";
+inputs.forEach((input) => {
+	input.addEventListener("focus", (event) => {
+		document.body.classList.add(focusClass);
+		setTimeout(() => {
+			const offsetAdjustment = window.innerHeight * 0.1;
+			const targetPosition =
+				event.target.getBoundingClientRect().top + window.scrollY;
+			const adjustedPosition =
+				targetPosition - window.innerHeight / 2 + offsetAdjustment;
+			window.scrollTo({
+				top: adjustedPosition,
+				behavior: "smooth",
+			});
+		}, 100);
+	});
+	input.addEventListener("blur", () => {
+		document.body.classList.remove(focusClass);
+	});
 });
 
 // Link redirect with am start
 function linkRedirect(url) {
-    toast("Redirecting to " + url);
-    setTimeout(() => {
-        exec(`am start -a android.intent.action.VIEW -d ${url}`)
-            .then(({ errno }) => {
-                if (errno !== 0) window.open(url, "_blank");
-            });
-    }, 100);
+	toast("Redirecting to " + url);
+	setTimeout(() => {
+		exec(`am start -a android.intent.action.VIEW -d ${url}`).then(
+			({ errno }) => {
+				if (errno !== 0) window.open(url, "_blank");
+			},
+		);
+	}, 100);
 }
 
 // Function to setup listener control button
 function setupControlListListeners(listElement, fileType) {
-    const controlList = listElement.previousElementSibling;
-    if (!controlList || !controlList.classList.contains('control-list')) return;
+	const controlList = listElement.previousElementSibling;
+	if (!controlList || !controlList.classList.contains("control-list")) return;
 
-    const backBtn = controlList.querySelector('.back');
-    const selectAllBtn = controlList.querySelector('.select-all');
-    const deleteBtn = controlList.querySelector('.delete');
-    const enableBtn = controlList.querySelector('.enable');
-    const disableBtn = controlList.querySelector('.disable');
-    const checkboxes = listElement.querySelectorAll('md-checkbox');
+	const backBtn = controlList.querySelector(".back");
+	const selectAllBtn = controlList.querySelector(".select-all");
+	const deleteBtn = controlList.querySelector(".delete");
+	const enableBtn = controlList.querySelector(".enable");
+	const disableBtn = controlList.querySelector(".disable");
+	const checkboxes = listElement.querySelectorAll("md-checkbox");
 
-    if (listElement.controlListeners) {
-        listElement.controlListeners.abort();
-    }
-    const controller = new AbortController();
-    listElement.controlListeners = controller;
+	if (listElement.controlListeners) {
+		listElement.controlListeners.abort();
+	}
+	const controller = new AbortController();
+	listElement.controlListeners = controller;
 
-    const hideControls = () => {
-        controlList.classList.remove('show');
-        checkboxes.forEach(cb => {
-            cb.classList.remove('show');
-            cb.checked = false;
-        });
-        controller.abort();
-    };
+	const hideControls = () => {
+		controlList.classList.remove("show");
+		checkboxes.forEach((cb) => {
+			cb.classList.remove("show");
+			cb.checked = false;
+		});
+		controller.abort();
+	};
 
-    const backAction = () => hideControls();
+	const backAction = () => hideControls();
 
-    const selectAllAction = () => {
-        const allSelected = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
-        checkboxes.forEach(cb => {
-            if (cb.checked !== !allSelected) {
-                cb.checked = !allSelected;
-                cb.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        });
-    };
+	const selectAllAction = () => {
+		const allSelected =
+			checkboxes.length > 0 && Array.from(checkboxes).every((cb) => cb.checked);
+		checkboxes.forEach((cb) => {
+			if (cb.checked !== !allSelected) {
+				cb.checked = !allSelected;
+				cb.dispatchEvent(new Event("change", { bubbles: true }));
+			}
+		});
+	};
 
-    const editAction = (action) => {
-        const checkedItems = Array.from(checkboxes).filter(cb => cb.checked);
-        if (checkedItems.length === 0) return;
+	const editAction = (action) => {
+		const checkedItems = Array.from(checkboxes).filter((cb) => cb.checked);
+		if (checkedItems.length === 0) return;
 
-        const lines = Array.from(checkedItems).map(item => item.value);
-        editLine(fileType, lines, action);
+		const lines = Array.from(checkedItems).map((item) => item.value);
+		editLine(fileType, lines, action);
 
-        hideControls();
-    };
+		hideControls();
+	};
 
-    backBtn.addEventListener('click', backAction, { signal: controller.signal });
-    selectAllBtn.addEventListener('click', selectAllAction, { signal: controller.signal });
-    deleteBtn.addEventListener('click', () => editAction("remove"), { signal: controller.signal });
-    if (enableBtn) enableBtn.addEventListener('click', () => editAction("enable"), { signal: controller.signal });
-    if (disableBtn) disableBtn.addEventListener('click', () => editAction("disable"), { signal: controller.signal });
+	backBtn.addEventListener("click", backAction, { signal: controller.signal });
+	selectAllBtn.addEventListener("click", selectAllAction, {
+		signal: controller.signal,
+	});
+	deleteBtn.addEventListener("click", () => editAction("remove"), {
+		signal: controller.signal,
+	});
+	if (enableBtn)
+		enableBtn.addEventListener("click", () => editAction("enable"), {
+			signal: controller.signal,
+		});
+	if (disableBtn)
+		disableBtn.addEventListener("click", () => editAction("disable"), {
+			signal: controller.signal,
+		});
 }
 
 // Function to read a file and display its content in the UI
 async function loadFile(fileType) {
-    try {
-        const filePath = 'link/persistent_dir/' + filePaths[fileType];
-        const response = await fetch(filePath);
-        if (!response.ok) throw new Error(filePath + ' not found');
-        const content = await response.text();
-        const lines = content
-            .split("\n")
-            .map(line => line.trim())
-            .filter(line => line);
-        
-        let sourceCounts = {};
-        if (fileType === "custom-source") {
-            try {
-                const countResponse = await fetch('link/persistent_dir/counts/sources.counts');
-                if (countResponse.ok) {
-                    const countContent = await countResponse.text();
-                    countContent.split("\n").forEach(line => {
-                        const parts = line.split("|");
-                        if (parts.length === 2) {
-                            sourceCounts[parts[0].trim()] = parts[1].trim();
-                        }
-                    });
-                }
-            } catch (e) {
-                console.log("No counts file found for sources.");
-            }
-        }
+	try {
+		const filePath = "link/persistent_dir/" + filePaths[fileType];
+		const response = await fetch(filePath);
+		if (!response.ok) throw new Error(filePath + " not found");
+		const content = await response.text();
+		const lines = content
+			.split("\n")
+			.map((line) => line.trim())
+			.filter((line) => line);
 
-        let skipDivider = true;
-        const now = new Date();
-        const isApril1st = (now.getMonth() === 3 && now.getDate() === 1);
-        const listElement = document.getElementById(`${fileType}-list`);
-        listElement.innerHTML = "";
+		const sourceCounts = {};
+		if (fileType === "custom-source") {
+			try {
+				const countResponse = await fetch(
+					"link/persistent_dir/counts/sources.counts",
+				);
+				if (countResponse.ok) {
+					const countContent = await countResponse.text();
+					countContent.split("\n").forEach((line) => {
+						const parts = line.split("|");
+						if (parts.length === 2) {
+							sourceCounts[parts[0].trim()] = parts[1].trim();
+						}
+					});
+				}
+			} catch (e) {
+				console.log("No counts file found for sources.");
+			}
+		}
 
-        // Function to create list items
-        lines.forEach(line => {
-            const rawLine = line;
-            // Free favicon provided by GitHub@twentyhq/favicon
-            const isDisabled = line.startsWith("# OFF # ");
-            if (isDisabled) line = line.replace("# OFF # ", "");
-            if (line.startsWith("#")) return;
-            const item = line.split('#');
-            const url = item[0].trim();
-            const name = item.slice(1).join('#').trim();
+		let skipDivider = true;
+		const now = new Date();
+		const isApril1st = now.getMonth() === 3 && now.getDate() === 1;
+		const listElement = document.getElementById(`${fileType}-list`);
+		listElement.innerHTML = "";
 
-            let domain = url.split(/\s+/).pop();
-            try {
-                if (!domain.startsWith("http")) domain = "http://" + domain;
-                domain = new URL(domain).hostname;
-            } catch {
-                domain = domain.split(/[/:?#]/)[0];
-            }
-            const faviconUrl = `https://twenty-icons.com/${domain}`;
+		// Function to create list items
+		lines.forEach((line) => {
+			const rawLine = line;
+			// Free favicon provided by GitHub@twentyhq/favicon
+			const isDisabled = line.startsWith("# OFF # ");
+			if (isDisabled) line = line.replace("# OFF # ", "");
+			if (line.startsWith("#")) return;
+			const item = line.split("#");
+			const url = item[0].trim();
+			const name = item.slice(1).join("#").trim();
 
-            const listItem = document.createElement("div");
-            listItem.innerHTML = `
+			let domain = url.split(/\s+/).pop();
+			try {
+				if (!domain.startsWith("http")) domain = "http://" + domain;
+				domain = new URL(domain).hostname;
+			} catch {
+				domain = domain.split(/[/:?#]/)[0];
+			}
+			const faviconUrl = `https://twenty-icons.com/${domain}`;
+
+			const listItem = document.createElement("div");
+			listItem.innerHTML = `
                 <div class="host-item">
-                    <div class="favicon-wrapper ${isDisabled ? 'disabled' : ''}">
+                    <div class="favicon-wrapper ${isDisabled ? "disabled" : ""}">
                         <md-circular-progress indeterminate></md-circular-progress>
                         <img class="favicon-img favicon" src="${faviconUrl}" />
                     </div>
-                    <div class="host-item-content ${isDisabled ? 'disabled' : ''}">
+                    <div class="host-item-content ${isDisabled ? "disabled" : ""}">
                         <div class="host-item-name">${name || url}</div>
-                        ${fileType === "custom-source" ? `
+                        ${
+													fileType === "custom-source"
+														? `
                             <span class="badge blocklist-badge"></span>
-                        ` : ''}
+                        `
+														: ""
+												}
                     </div>
                     <div class="spacer"></div>
                     <md-checkbox value="${url}"></md-checkbox>
                 </div>
             `;
 
-            const img = listItem.querySelector(".favicon-img");
-            if (img) {
-                const loader = listItem.querySelector("md-circular-progress");
-                img.onload = () => {
-                    loader.style.display = "none";
-                    img.style.display = "block";
-                };
-                img.onerror = () => {
-                    loader.style.display = "none";
-                    listItem.querySelector(".favicon-wrapper").innerHTML = `<md-icon>domain</md-icon>`
-                };
-            }
+			const img = listItem.querySelector(".favicon-img");
+			if (img) {
+				const loader = listItem.querySelector("md-circular-progress");
+				img.onload = () => {
+					loader.style.display = "none";
+					img.style.display = "block";
+				};
+				img.onerror = () => {
+					loader.style.display = "none";
+					listItem.querySelector(".favicon-wrapper").innerHTML =
+						`<md-icon>domain</md-icon>`;
+				};
+			}
 
-            const badge = listItem.querySelector('.badge');
-            if (badge) {
-                badge.textContent = formatNumber(sourceCounts[url] || 0, isApril1st, true);
-                badge.classList.toggle('display-flex', !isDisabled);
-            }
+			const badge = listItem.querySelector(".badge");
+			if (badge) {
+				badge.textContent = formatNumber(
+					sourceCounts[url] || 0,
+					isApril1st,
+					true,
+				);
+				badge.classList.toggle("display-flex", !isDisabled);
+			}
 
-            listItem.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                const list = listItem.parentElement;
-                if (list) {
-                    const controlList = list.previousElementSibling;
-                    const isControlListShowing = controlList.classList.contains('show');
-                    
-                    if (isControlListShowing) {
-                        openEditDialog(fileType, rawLine);
-                        return;
-                    }
-                    const checkboxes = list.querySelectorAll('md-checkbox');
-                    checkboxes.forEach(cb => cb.classList.add('show'));
-                    controlList.classList.add('show');
-                    setupControlListListeners(list, fileType);
-                    const checkbox = listItem.querySelector('md-checkbox');
-                    if (checkbox) {
-                        checkbox.checked = true;
-                        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                }
-            });
+			listItem.addEventListener("contextmenu", (e) => {
+				e.preventDefault();
+				const list = listItem.parentElement;
+				if (list) {
+					const controlList = list.previousElementSibling;
+					const isControlListShowing = controlList.classList.contains("show");
 
-            listItem.addEventListener('click', () => {
-                const checkbox = listItem.querySelector('md-checkbox');
-                if (checkbox.classList.contains('hidden')) return;
-                checkbox.checked = !checkbox.checked;
-                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-            });
+					if (isControlListShowing) {
+						openEditDialog(fileType, rawLine);
+						return;
+					}
+					const checkboxes = list.querySelectorAll("md-checkbox");
+					checkboxes.forEach((cb) => cb.classList.add("show"));
+					controlList.classList.add("show");
+					setupControlListListeners(list, fileType);
+					const checkbox = listItem.querySelector("md-checkbox");
+					if (checkbox) {
+						checkbox.checked = true;
+						checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+					}
+				}
+			});
 
-            if (!skipDivider) {
-                listElement.appendChild(document.createElement("md-divider"));
-            }
-            skipDivider = false;
-            listElement.appendChild(listItem);
-        });
-    } catch (e) {
-        console.warn(e);
-    }
+			listItem.addEventListener("click", () => {
+				const checkbox = listItem.querySelector("md-checkbox");
+				if (checkbox.classList.contains("hidden")) return;
+				checkbox.checked = !checkbox.checked;
+				checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+			});
+
+			if (!skipDivider) {
+				listElement.appendChild(document.createElement("md-divider"));
+			}
+			skipDivider = false;
+			listElement.appendChild(listItem);
+		});
+	} catch (e) {
+		console.warn(e);
+	}
 }
 
 // Function to remove a line from whitelist/blacklist/custom-source
 function editLine(fileType, lines, action = "remove") {
-    const line = lines.join(' ');
-    const result = spawn(`sh ${modulePath}/rmlwk.sh --${fileType} ${action} ${line}`);
-    result.on('exit', (code) => {
-        if (code !== 0) {
-            console.error(`Failed to ${action} line from ${fileType}:`, result.stderr);
-            showPrompt(`Failed to ${action} line from ${fileType}`, false);
-        }
-        loadFile(fileType);
-        getStatus();
-    });
+	const line = lines.join(" ");
+	const result = spawn(
+		`sh ${modulePath}/rmlwk.sh --${fileType} ${action} ${line}`,
+	);
+	result.on("exit", (code) => {
+		if (code !== 0) {
+			console.error(
+				`Failed to ${action} line from ${fileType}:`,
+				result.stderr,
+			);
+			showPrompt(`Failed to ${action} line from ${fileType}`, false);
+		}
+		loadFile(fileType);
+		getStatus();
+	});
 }
 
 function openEditDialog(fileType, currentLine) {
-    const editDialog = document.getElementById('edit-dialog');
-    const editName = document.getElementById('edit-name');
-    const editDomain = document.getElementById('edit-domain');
-    const cancelBtn = document.getElementById('cancel-edit');
-    const confirmBtn = document.getElementById('confirm-edit');
+	const editDialog = document.getElementById("edit-dialog");
+	const editName = document.getElementById("edit-name");
+	const editDomain = document.getElementById("edit-domain");
+	const cancelBtn = document.getElementById("cancel-edit");
+	const confirmBtn = document.getElementById("confirm-edit");
 
-    const isDisabled = currentLine.startsWith('# OFF # ');
-    const entry = isDisabled ? currentLine.replace('# OFF # ', '') : currentLine;
-    const enrtyParts = entry.split('#');
-    const domain = enrtyParts[0].trim();
-    const name = enrtyParts.slice(1).join('#').trim() || '';
+	const isDisabled = currentLine.startsWith("# OFF # ");
+	const entry = isDisabled ? currentLine.replace("# OFF # ", "") : currentLine;
+	const enrtyParts = entry.split("#");
+	const domain = enrtyParts[0].trim();
+	const name = enrtyParts.slice(1).join("#").trim() || "";
 
-    editName.value = name;
-    editDomain.value = domain;
-    editDialog.show();
+	editName.value = name;
+	editDomain.value = domain;
+	editDialog.show();
 
-    const closeDialog = () => editDialog.close();
+	const closeDialog = () => editDialog.close();
 
-    cancelBtn.onclick = closeDialog;
-    confirmBtn.onclick = async () => {
-        const newDomain = editDomain.value.trim();
-        const newName = editName.value.trim();
-        if (!newDomain || newDomain === domain || newName === name) {
-            closeDialog();
-            return;
-        }
+	cancelBtn.onclick = closeDialog;
+	confirmBtn.onclick = async () => {
+		const newDomain = editDomain.value.trim();
+		const newName = editName.value.trim();
+		if (!newDomain || newDomain === domain || newName === name) {
+			closeDialog();
+			return;
+		}
 
-        const newLine = `${isDisabled ? '# OFF # ' : ''}${newDomain}${newName ? ' # ' + newName : ''}`
-        const targetFile = `${basePath}/${filePaths[fileType]}`;
-        const escapeLine = (line) => line.replace(/[\/&]/g, '\\$&');
+		const newLine = `${isDisabled ? "# OFF # " : ""}${newDomain}${newName ? " # " + newName : ""}`;
+		const targetFile = `${basePath}/${filePaths[fileType]}`;
+		const escapeLine = (line) => line.replace(/[/&]/g, "\\$&");
 
-        const result = await exec(`sed -i 's|${escapeLine(currentLine)}|${escapeLine(newLine)}|' "${targetFile}"`);
-        if (result.errno === 0) {
-            await loadFile(fileType);
-        } else {
-            showPrompt('Failed to update line', false);
-        }
-        closeDialog();
-    };
+		const result = await exec(
+			`sed -i 's|${escapeLine(currentLine)}|${escapeLine(newLine)}|' "${targetFile}"`,
+		);
+		if (result.errno === 0) {
+			await loadFile(fileType);
+		} else {
+			showPrompt("Failed to update line", false);
+		}
+		closeDialog();
+	};
 }
 
 // Function to link file
 async function linkFile() {
-    const result = await exec(`
+	const result = await exec(`
         mkdir -p ${modulePath}/webroot/link
         [ -L ${modulePath} ] || ln -s ${basePath} ${modulePath}/webroot/link/persistent_dir
     `);
-    return result.errno === 0;
+	return result.errno === 0;
 }
 
 function setupPrank() {
-    const today = new Date();
-    if (today.getMonth() !== 3 || today.getDate() !== 1) {
-        // Not April 1st, revert Easter Egg changes if any
-        document.getElementById('module-name').textContent = "Re-Malwack";
-        const statusText = document.getElementById('status-text');
-        if (statusText && statusText.previousElementSibling && statusText.previousElementSibling.textContent === "Allowed Ads") {
-            statusText.previousElementSibling.textContent = "Blocked Entries";
-        }
-        return;
-    }
+	const today = new Date();
+	if (today.getMonth() !== 3 || today.getDate() !== 1) {
+		// Not April 1st, revert Easter Egg changes if any
+		document.getElementById("module-name").textContent = "Re-Malwack";
+		const statusText = document.getElementById("status-text");
+		if (
+			statusText &&
+			statusText.previousElementSibling &&
+			statusText.previousElementSibling.textContent === "Allowed Ads"
+		) {
+			statusText.previousElementSibling.textContent = "Blocked Entries";
+		}
+		return;
+	}
 
-    // April 1st Easter Egg
-    document.getElementById('module-name').textContent = "Re-Malware";
-    
-    // Change Blocked Entries to Allowed Ads
-    const statusText = document.getElementById('status-text');
-    if (statusText && statusText.previousElementSibling) {
-        statusText.previousElementSibling.textContent = "Allowed Ads";
-    }
+	// April 1st Easter Egg
+	document.getElementById("module-name").textContent = "Re-Malware";
 
-    // Replace the logo with the Re-Malware SVG
-    const logoElement = document.getElementById('logo');
-    if (logoElement) {
-        logoElement.innerHTML = ''
-        logoElement.src = ReMalwareIcon;
-    }
+	// Change Blocked Entries to Allowed Ads
+	const statusText = document.getElementById("status-text");
+	if (statusText && statusText.previousElementSibling) {
+		statusText.previousElementSibling.textContent = "Allowed Ads";
+	}
 
-    // Make sure this won't be triggered in a row for user experience
-    if (lastPrank !== '1') {
-        // Set flag in localStorage to prevent it from happening next time
-        localStorage.setItem('lastPrank', '1');
-    }
+	// Replace the logo with the Re-Malware SVG
+	const logoElement = document.getElementById("logo");
+	if (logoElement) {
+		logoElement.innerHTML = "";
+		logoElement.src = ReMalwareIcon;
+	}
+
+	// Make sure this won't be triggered in a row for user experience
+	if (lastPrank !== "1") {
+		// Set flag in localStorage to prevent it from happening next time
+		localStorage.setItem("lastPrank", "1");
+	}
 }
 
 let cachedThemeData = null;
@@ -878,32 +996,39 @@ let cachedThemeData = null;
  * @param {string} themeName - Name of the theme to load
  */
 async function loadTheme(themeName) {
-    try {
-        if (!cachedThemeData) {
-            const response = await fetch('theme.json');
-            cachedThemeData = await response.json();
-        }
+	try {
+		if (!cachedThemeData) {
+			const response = await fetch("theme.json");
+			cachedThemeData = await response.json();
+		}
 
-        let schemeName = themeName;
-        if (themeName === 'system') {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const preferred = prefersDark ? 'dark' : 'light';
-            schemeName = cachedThemeData.schemes[preferred] ? preferred : Object.keys(cachedThemeData.schemes)[0];
-        }
+		let schemeName = themeName;
+		if (themeName === "system") {
+			const prefersDark = window.matchMedia(
+				"(prefers-color-scheme: dark)",
+			).matches;
+			const preferred = prefersDark ? "dark" : "light";
+			schemeName = cachedThemeData.schemes[preferred]
+				? preferred
+				: Object.keys(cachedThemeData.schemes)[0];
+		}
 
-        const scheme = cachedThemeData.schemes[schemeName];
-        if (!scheme) return;
+		const scheme = cachedThemeData.schemes[schemeName];
+		if (!scheme) return;
 
-        const root = document.documentElement;
-        for (const [key, value] of Object.entries(scheme)) {
-            const cssVarName = `--md-sys-color-${key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()}`;
-            root.style.setProperty(cssVarName, value);
-        }
-        root.style.setProperty('--md-sys-color-primary-main', scheme.primary);
-        document.documentElement.classList.toggle('dark-theme', schemeName === 'dark');
-    } catch (error) {
-        console.error('Error loading theme:', error);
-    }
+		const root = document.documentElement;
+		for (const [key, value] of Object.entries(scheme)) {
+			const cssVarName = `--md-sys-color-${key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()}`;
+			root.style.setProperty(cssVarName, value);
+		}
+		root.style.setProperty("--md-sys-color-primary-main", scheme.primary);
+		document.documentElement.classList.toggle(
+			"dark-theme",
+			schemeName === "dark",
+		);
+	} catch (error) {
+		console.error("Error loading theme:", error);
+	}
 }
 
 /**
@@ -912,99 +1037,101 @@ async function loadTheme(themeName) {
  * @return {Promise<void>}
  */
 async function setupTheme() {
-    const themeAnchor = document.getElementById('theme-toggle');
-    const themeSelect = document.getElementById('theme-select');
+	const themeAnchor = document.getElementById("theme-toggle");
+	const themeSelect = document.getElementById("theme-select");
 
-    themeAnchor.onclick = (e) => {
-        e.stopImmediatePropagation();
-        themeSelect.open = !themeSelect.open
-    }
-    try {
-        if (!cachedThemeData) {
-            const response = await fetch('theme.json');
-            cachedThemeData = await response.json();
-        }
+	themeAnchor.onclick = (e) => {
+		e.stopImmediatePropagation();
+		themeSelect.open = !themeSelect.open;
+	};
+	try {
+		if (!cachedThemeData) {
+			const response = await fetch("theme.json");
+			cachedThemeData = await response.json();
+		}
 
-        // Clear and populate theme-select
-        themeSelect.innerHTML = '';
-        
-        const options = [...Object.keys(cachedThemeData.schemes), 'system'];
-        const savedTheme = localStorage.getItem('remalwack_theme') || 'system';
+		// Clear and populate theme-select
+		themeSelect.innerHTML = "";
 
-        options.forEach(key => {
-            const option = document.createElement('md-menu-item');
-            option.selected = (key === savedTheme);
-            if (key === savedTheme) option.classList.add('selected');
-            option.innerHTML = `
+		const options = [...Object.keys(cachedThemeData.schemes), "system"];
+		const savedTheme = localStorage.getItem("remalwack_theme") || "system";
+
+		options.forEach((key) => {
+			const option = document.createElement("md-menu-item");
+			option.selected = key === savedTheme;
+			if (key === savedTheme) option.classList.add("selected");
+			option.innerHTML = `
                 <div slot="headline">${key.charAt(0).toUpperCase() + key.slice(1)}</div>
             `;
-            option.onclick = (e) => {
-                e.stopImmediatePropagation();
-                themeSelect.querySelectorAll('md-menu-item').forEach(item => {
-                    item.classList.remove('selected')
-                    item.selected = false
-                });
-                option.classList.add('selected');
-                option.selected = true;
-                setNewTheme(key);
-            }
-            themeSelect.appendChild(option);
-        });
+			option.onclick = (e) => {
+				e.stopImmediatePropagation();
+				themeSelect.querySelectorAll("md-menu-item").forEach((item) => {
+					item.classList.remove("selected");
+					item.selected = false;
+				});
+				option.classList.add("selected");
+				option.selected = true;
+				setNewTheme(key);
+			};
+			themeSelect.appendChild(option);
+		});
 
-        await loadTheme(savedTheme);
+		await loadTheme(savedTheme);
 
-        const setNewTheme = async (themeName) => {
-            if (themeName === 'system') {
-                localStorage.removeItem('remalwack_theme');
-            } else {
-                localStorage.setItem('remalwack_theme', themeName);
-            }
-            await loadTheme(themeName);
-        }
+		const setNewTheme = async (themeName) => {
+			if (themeName === "system") {
+				localStorage.removeItem("remalwack_theme");
+			} else {
+				localStorage.setItem("remalwack_theme", themeName);
+			}
+			await loadTheme(themeName);
+		};
 
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            if (themeSelect.value === 'system') {
-                loadTheme('system');
-            }
-        });
-    } catch (error) {
-        console.error('Error setting up theme:', error);
-    }
+		window
+			.matchMedia("(prefers-color-scheme: dark)")
+			.addEventListener("change", () => {
+				if (themeSelect.value === "system") {
+					loadTheme("system");
+				}
+			});
+	} catch (error) {
+		console.error("Error setting up theme:", error);
+	}
 }
 
 // update adblock swtich
 async function updateAdblockSwtich() {
-    const play = document.getElementById('play-icon');
-    const pause = document.getElementById('pause-icon');
-    const protection = await isPaused();
-    play.classList.toggle('display-block', protection);
-    pause.classList.toggle('display-block', !protection);
+	const play = document.getElementById("play-icon");
+	const pause = document.getElementById("pause-icon");
+	const protection = await isPaused();
+	play.classList.toggle("display-block", protection);
+	pause.classList.toggle("display-block", !protection);
 }
 
 function initCredit() {
-    const credit = document.querySelector('.credit-list');
-    fetch('contributors.json')
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(contributor => {
-                const creditBox = document.createElement('div');
-                creditBox.className = 'credit-box';
-                creditBox.innerHTML = `
+	const credit = document.querySelector(".credit-list");
+	fetch("contributors.json")
+		.then((response) => response.json())
+		.then((data) => {
+			data.forEach((contributor) => {
+				const creditBox = document.createElement("div");
+				creditBox.className = "credit-box";
+				creditBox.innerHTML = `
                     <img src="https://github.com/${contributor.username}.png" alt="${contributor.username}">
                     <h3>${contributor.username}</h3>
                     <h4>${contributor.type}</h4>
                     <p>${contributor.description}</p>
                     <md-ripple></md-ripple>
                 `;
-                credit.appendChild(creditBox);
-                creditBox.addEventListener('click', () => {
-                    linkRedirect(`https://github.com/${contributor.username}`);
-                });
-            });
-        })
-        .catch(error => {
-            console.error('Error loading contributors:', error);
-        });
+				credit.appendChild(creditBox);
+				creditBox.addEventListener("click", () => {
+					linkRedirect(`https://github.com/${contributor.username}`);
+				});
+			});
+		})
+		.catch((error) => {
+			console.error("Error loading contributors:", error);
+		});
 }
 
 // Scroll event
@@ -1012,188 +1139,240 @@ let lastScrollY = window.scrollY;
 let isScrolling = false;
 let scrollTimeout;
 const scrollThreshold = 25;
-const floatBtn = document.querySelector('.float-container');
-window.addEventListener('scroll', () => {
-    isScrolling = true;
-    clearTimeout(scrollTimeout);
-    scrollTimeout = setTimeout(() => {
-        isScrolling = false;
-    }, 200);
+const floatBtn = document.querySelector(".float-container");
+window.addEventListener("scroll", () => {
+	isScrolling = true;
+	clearTimeout(scrollTimeout);
+	scrollTimeout = setTimeout(() => {
+		isScrolling = false;
+	}, 200);
 
-    // Hide remove button on scroll
-    const box = document.querySelector('.box li');
-    if (box) {
-        document.querySelectorAll('.box li').forEach(li => {
-            li.scrollTo({ left: 0, behavior: 'smooth' });
-        });
-    }
-    if (window.scrollY > lastScrollY && window.scrollY > scrollThreshold) {
-        floatBtn.classList.remove('show');
-    } else if (window.scrollY < lastScrollY) {
-        floatBtn.classList.add('show');
-    }
-    lastScrollY = window.scrollY;
+	// Hide remove button on scroll
+	const box = document.querySelector(".box li");
+	if (box) {
+		document.querySelectorAll(".box li").forEach((li) => {
+			li.scrollTo({ left: 0, behavior: "smooth" });
+		});
+	}
+	if (window.scrollY > lastScrollY && window.scrollY > scrollThreshold) {
+		floatBtn.classList.remove("show");
+	} else if (window.scrollY < lastScrollY) {
+		floatBtn.classList.add("show");
+	}
+	lastScrollY = window.scrollY;
 });
 
-document.querySelector('.credit').addEventListener('scroll', () => {
-    isScrolling = true;
-    clearTimeout(scrollTimeout);
-    scrollTimeout = setTimeout(() => {
-        isScrolling = false;
-    }, 200);
+document.querySelector(".credit").addEventListener("scroll", () => {
+	isScrolling = true;
+	clearTimeout(scrollTimeout);
+	scrollTimeout = setTimeout(() => {
+		isScrolling = false;
+	}, 200);
 });
 
 function setupEventListener() {
-    document.getElementById("info-box").addEventListener("click", aboutMenu);
-    document.getElementById("update").addEventListener("click", () => performAction("--update-hosts"));
-    document.getElementById("daily-update-toggle").addEventListener("change", toggleDailyUpdate);
-    document.getElementById("reset").addEventListener("click", resetHostsFile);
-    document.getElementById("export-logs").addEventListener("click", exportLogs);
+	document.getElementById("info-box").addEventListener("click", aboutMenu);
+	document
+		.getElementById("update")
+		.addEventListener("click", () => performAction("--update-hosts"));
+	document
+		.getElementById("daily-update-toggle")
+		.addEventListener("change", toggleDailyUpdate);
+	document.getElementById("reset").addEventListener("click", resetHostsFile);
+	document.getElementById("export-logs").addEventListener("click", exportLogs);
 
-    // Action mode listener
-    document.getElementById("action-mode").addEventListener("click", () => updateActionMode(actionMode === 1 ? 0 : 1));
+	// Action mode listener
+	document
+		.getElementById("action-mode")
+		.addEventListener("click", () =>
+			updateActionMode(actionMode === 1 ? 0 : 1),
+		);
 
-    // Custom block toggle listeners
-    setupCustomBlock();
+	// Custom block toggle listeners
+	setupCustomBlock();
 
-    // About page links
-    links.forEach(link => {
-        document.getElementById(link.element).addEventListener("click", () => {
-            linkRedirect(link.url);
-        });
-    });
+	// About page links
+	links.forEach((link) => {
+		document.getElementById(link.element).addEventListener("click", () => {
+			linkRedirect(link.url);
+		});
+	});
 
-    // Adblock switch
-    document.getElementById('adblock-switch').addEventListener("click", async () => {
-        const result = await performAction('--adblock-switch', false);
-        showPrompt(result ? "Success" : "Failed", result);
-    });
+	// Adblock switch
+	document
+		.getElementById("adblock-switch")
+		.addEventListener("click", async () => {
+			const result = await performAction("--adblock-switch", false);
+			showPrompt(result ? "Success" : "Failed", result);
+		});
 
-    // Add button
-    document.getElementById("whitelist-input").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") handleAdd("whitelist");
-    });
-    document.getElementById("blacklist-input").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") handleAdd("blacklist");
-    });
-    document.getElementById("custom-source-input").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") handleAdd("custom-source");
-    });
-    document.getElementById("custom-rule-ip").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") handleAdd("custom-rule");
-    });
-    document.getElementById("custom-rule-domain").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") handleAdd("custom-rule");
-    });
-    document.getElementById("whitelist-add").addEventListener("click", () => handleAdd("whitelist"));
-    document.getElementById("blacklist-add").addEventListener("click", () => handleAdd("blacklist"));
-    document.getElementById("custom-source-add").addEventListener("click", () => handleAdd("custom-source"));
-    document.getElementById("custom-rule-add").addEventListener("click", () => handleAdd("custom-rule"));
+	// Add button
+	document
+		.getElementById("whitelist-input")
+		.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") handleAdd("whitelist");
+		});
+	document
+		.getElementById("blacklist-input")
+		.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") handleAdd("blacklist");
+		});
+	document
+		.getElementById("custom-source-input")
+		.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") handleAdd("custom-source");
+		});
+	document
+		.getElementById("custom-rule-ip")
+		.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") handleAdd("custom-rule");
+		});
+	document
+		.getElementById("custom-rule-domain")
+		.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") handleAdd("custom-rule");
+		});
+	document
+		.getElementById("whitelist-add")
+		.addEventListener("click", () => handleAdd("whitelist"));
+	document
+		.getElementById("blacklist-add")
+		.addEventListener("click", () => handleAdd("blacklist"));
+	document
+		.getElementById("custom-source-add")
+		.addEventListener("click", () => handleAdd("custom-source"));
+	document
+		.getElementById("custom-rule-add")
+		.addEventListener("click", () => handleAdd("custom-rule"));
 
-    // Query
-    document.getElementById("query-input").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") handleQuery();
-    });
-    document.getElementById("query-search").addEventListener("click", () => handleQuery());
+	// Query
+	document.getElementById("query-input").addEventListener("keypress", (e) => {
+		if (e.key === "Enter") handleQuery();
+	});
+	document
+		.getElementById("query-search")
+		.addEventListener("click", () => handleQuery());
 }
 
 // Function to handle festival themes
 function setupFestivalThemes() {
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentDay = now.getDate();
+	const now = new Date();
+	const currentMonth = now.getMonth() + 1;
+	const currentDay = now.getDate();
 
-    festivals.forEach(festival => {
-        const start = festival.start;
-        const end = festival.end;
-        let isActive = false;
+	festivals.forEach((festival) => {
+		const start = festival.start;
+		const end = festival.end;
+		let isActive = false;
 
-        if (start.month === end.month) {
-            // Same month
-            if (currentMonth === start.month && currentDay >= start.day && currentDay <= end.day) {
-                isActive = true;
-            }
-        } else {
-            // Spans year end, like Dec to Jan
-            if ((currentMonth === start.month && currentDay >= start.day) ||
-                (currentMonth === end.month && currentDay <= end.day)) {
-                isActive = true;
-            }
-        }
-        if (isActive) {
-            const element = document.getElementById(festival.id);
-            if (element) element.classList.add('show');
-        }
-    });
+		if (start.month === end.month) {
+			// Same month
+			if (
+				currentMonth === start.month &&
+				currentDay >= start.day &&
+				currentDay <= end.day
+			) {
+				isActive = true;
+			}
+		} else {
+			// Spans year end, like Dec to Jan
+			if (
+				(currentMonth === start.month && currentDay >= start.day) ||
+				(currentMonth === end.month && currentDay <= end.day)
+			) {
+				isActive = true;
+			}
+		}
+		if (isActive) {
+			const element = document.getElementById(festival.id);
+			if (element) element.classList.add("show");
+		}
+	});
 }
 
 // Initial load
-document.addEventListener('DOMContentLoaded', async () => {
-    await Promise.all([setupTheme()]);
-    document.querySelectorAll('[unresolved]').forEach(el => el.removeAttribute('unresolved'));
-    checkMMRL();
-    setupPrank();
-    setupFestivalThemes();
-    setupEventListener();
-    getVersion();
-    getStatus();
-    checkMount();
-    loadActionMode();
-    updateAdblockSwtich();
-    floatBtn.classList.add('show');
-    await checkBlockStatus();
-    ["custom-source", "custom-rule", "blacklist", "whitelist"].forEach(loadFile);
+document.addEventListener("DOMContentLoaded", async () => {
+	await Promise.all([setupTheme()]);
+	document
+		.querySelectorAll("[unresolved]")
+		.forEach((el) => el.removeAttribute("unresolved"));
+	checkMMRL();
+	setupPrank();
+	setupFestivalThemes();
+	setupEventListener();
+	getVersion();
+	getStatus();
+	checkMount();
+	loadActionMode();
+	updateAdblockSwtich();
+	floatBtn.classList.add("show");
+	await checkBlockStatus();
+	["custom-source", "custom-rule", "blacklist", "whitelist"].forEach(loadFile);
 });
 
 // Overwrite default dialog animation
-document.querySelectorAll('md-dialog').forEach(dialog => {
-    const defaultOpenAnim = dialog.getOpenAnimation;
-    const defaultCloseAnim = dialog.getCloseAnimation;
+document.querySelectorAll("md-dialog").forEach((dialog) => {
+	const defaultOpenAnim = dialog.getOpenAnimation;
+	const defaultCloseAnim = dialog.getCloseAnimation;
 
-    dialog.getOpenAnimation = () => {
-        const defaultAnim = defaultOpenAnim.call(dialog);
-        const customAnim = {};
-        Object.keys(defaultAnim).forEach(key => customAnim[key] = defaultAnim[key]);
+	dialog.getOpenAnimation = () => {
+		const defaultAnim = defaultOpenAnim.call(dialog);
+		const customAnim = {};
+		Object.keys(defaultAnim).forEach(
+			(key) => (customAnim[key] = defaultAnim[key]),
+		);
 
-        customAnim.dialog = [
-            [
-                [{ opacity: 0, transform: 'translateY(50px)' }, { opacity: 1, transform: 'translateY(0)' }],
-                { duration: 240, easing: 'ease' }
-            ]
-        ];
-        customAnim.scrim = [
-            [
-                [{'opacity': 0}, {'opacity': 0.32}],
-                {duration: 240, easing: 'linear'},
-            ],
-        ];
-        customAnim.container = [];
+		customAnim.dialog = [
+			[
+				[
+					{ opacity: 0, transform: "translateY(50px)" },
+					{ opacity: 1, transform: "translateY(0)" },
+				],
+				{ duration: 240, easing: "ease" },
+			],
+		];
+		customAnim.scrim = [
+			[
+				[{ opacity: 0 }, { opacity: 0.32 }],
+				{ duration: 240, easing: "linear" },
+			],
+		];
+		customAnim.container = [];
 
-        return customAnim;
-    };
+		return customAnim;
+	};
 
-    dialog.getCloseAnimation = () => {
-        const defaultAnim = defaultCloseAnim.call(dialog);
-        const customAnim = {};
-        Object.keys(defaultAnim).forEach(key => customAnim[key] = defaultAnim[key]);
+	dialog.getCloseAnimation = () => {
+		const defaultAnim = defaultCloseAnim.call(dialog);
+		const customAnim = {};
+		Object.keys(defaultAnim).forEach(
+			(key) => (customAnim[key] = defaultAnim[key]),
+		);
 
-        customAnim.dialog = [
-            [
-                [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-50px)' }],
-                { duration: 240, easing: 'ease' }
-            ]
-        ];
-        customAnim.scrim = [
-            [
-                [{'opacity': 0.32}, {'opacity': 0}],
-                {duration: 240, easing: 'linear'},
-            ],
-        ];
-        customAnim.container = [];
+		customAnim.dialog = [
+			[
+				[
+					{ opacity: 1, transform: "translateY(0)" },
+					{ opacity: 0, transform: "translateY(-50px)" },
+				],
+				{ duration: 240, easing: "ease" },
+			],
+		];
+		customAnim.scrim = [
+			[
+				[{ opacity: 0.32 }, { opacity: 0 }],
+				{ duration: 240, easing: "linear" },
+			],
+		];
+		customAnim.container = [];
 
-        return customAnim;
-    };
+		return customAnim;
+	};
 
-    dialog.addEventListener('opened', () => document.body.classList.add('noscroll'));
-    dialog.addEventListener('closed', () => document.body.classList.remove('noscroll'));
+	dialog.addEventListener("opened", () =>
+		document.body.classList.add("noscroll"),
+	);
+	dialog.addEventListener("closed", () =>
+		document.body.classList.remove("noscroll"),
+	);
 });
