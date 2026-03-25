@@ -1,386 +1,535 @@
 <!doctype html>
 <html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Re-Malwack</title>
+		<link rel="stylesheet" href="src/styles.css" type="text/css" />
+		<script type="module" crossorigin src="src/index.js"></script>
+	</head>
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Re-Malwack</title>
-    <link rel="stylesheet" href="src/styles.css" type="text/css">
-    <script type="module" crossorigin src="src/index.js"></script>
-</head>
+	<body>
+		<div class="content" unresolved>
+			<!-- Header -->
+			<div class="header" id="info-box">
+				<i class="logo" id="logo">
+					<svg
+						viewBox="0 0 1176.4 145.8"
+						xmlns="http://www.w3.org/2000/svg"
+					>
+						<title>Re-malwak logo</title>
+						<path
+							d="M0 12v123.5h108L90.6 102a51 51 0 0 0 18.1-39A51 51 0 0 0 59 12zm115.6 0v107.2h.2v16h102.1v-42h-26.2v-4.6h25.7V59.1h-25.7v-5h26V11.8h-26zm113.1 69.1h43.2v15h-43.2zM282.6 9v126h123.2V9l-61.6 45Z"
+						/>
+						<path d="m482.8-.2 77.9 135-156-.1Z" />
+						<path
+							d="M557.8 11.7V135h97.7V73h-34.7V11.6Zm138.2.8.1.1h-65.4l76.8 133.2 29.9-51.7-13.3-21.3 5-3.1 43.8 76 77-133.1zM863.9.3l77.8 135h-156Zm187.3 119.9a66 66 0 0 1-93-.2 66 66 0 0 1 .2-93 66 66 0 0 1 93 .2l-46.6 46.4zm76.9-108.4h-73.2v124h73.2v.1h48.3l-45.8-62.1 45.7-62Z"
+						/>
+					</svg>
+				</i>
+				<div class="spacer"></div>
+				<span class="menu">
+					<md-icon-button id="theme-toggle"
+						><md-icon>routine</md-icon></md-icon-button
+					>
+					<md-menu id="theme-select" anchor="theme-toggle"></md-menu>
+				</span>
+				<div id="festival-theme">
+					<img
+						alt="festival theme"
+						class="festival"
+						id="christmas"
+						src="snowflakes.png"
+					/>
+					<!-- <img class="festival" id="halloween" src="assets/pumpkin.png"> -->
+				</div>
+				<md-ripple></md-ripple>
+			</div>
 
-<body>
-    <div class="content" unresolved>
-        <!-- Header -->
-        <div class="header" id="info-box">
-            <i class="logo" id="logo">
-                <svg viewBox="0 0 1176.4 145.8" xmlns="http://www.w3.org/2000/svg">
-                <title>Re-malwak logo</title>
-                    <path
-                        d="M0 12v123.5h108L90.6 102a51 51 0 0 0 18.1-39A51 51 0 0 0 59 12zm115.6 0v107.2h.2v16h102.1v-42h-26.2v-4.6h25.7V59.1h-25.7v-5h26V11.8h-26zm113.1 69.1h43.2v15h-43.2zM282.6 9v126h123.2V9l-61.6 45Z" />
-                    <path d="m482.8-.2 77.9 135-156-.1Z" />
-                    <path
-                        d="M557.8 11.7V135h97.7V73h-34.7V11.6Zm138.2.8.1.1h-65.4l76.8 133.2 29.9-51.7-13.3-21.3 5-3.1 43.8 76 77-133.1zM863.9.3l77.8 135h-156Zm187.3 119.9a66 66 0 0 1-93-.2 66 66 0 0 1 .2-93 66 66 0 0 1 93 .2l-46.6 46.4zm76.9-108.4h-73.2v124h73.2v.1h48.3l-45.8-62.1 45.7-62Z" />
-                </svg>
-            </i>
-            <div class="spacer"></div>
-            <span class="menu">
-                <md-icon-button id="theme-toggle"><md-icon>routine</md-icon></md-icon-button>
-                <md-menu id="theme-select" anchor="theme-toggle"></md-menu>
-            </span>
-            <div id="festival-theme">
-                <img alt="festival theme" class="festival" id="christmas" src="snowflakes.png">
-                <!-- <img class="festival" id="halloween" src="assets/pumpkin.png"> -->
-            </div>
-            <md-ripple></md-ripple>
-        </div>
+			<!-- Disabled block -->
+			<div class="header header-disabled" id="disabled-box">
+				<md-icon>warning</md-icon>
+				<div id="disable-text"></div>
+			</div>
 
-        <!-- Disabled block -->
-        <div class="header header-disabled" id="disabled-box">
-            <md-icon>warning</md-icon>
-            <div id="disable-text"></div>
-        </div>
+			<!-- Test version block -->
+			<div class="header header-disabled" id="test-version-box">
+				<md-icon>info</md-icon>
+				<div id="test-version-text"></div>
+			</div>
 
-        <!-- Test version block -->
-        <div class="header header-disabled" id="test-version-box">
-            <md-icon>info</md-icon>
-            <div id="test-version-text"></div>
-        </div>
+			<!-- Broken mount block -->
+			<div class="header header-disabled" id="broken-mount-box">
+				<md-icon>close</md-icon>
+				<div>
+					Critical Error: Broken hosts mount
+					<p>
+						Please check your root manager settings and disable any
+						conflicted module(s), Or try reboot your device.
+					</p>
+				</div>
+			</div>
 
-        <!-- Broken mount block -->
-        <div class="header header-disabled" id="broken-mount-box">
-            <md-icon>close</md-icon>
-            <div>
-                Critical Error: Broken hosts mount
-                <p>Please check your root manager settings and disable any conflicted module(s), Or try reboot your device.</p>
-            </div>
+			<!-- Dashboard -->
+			<div class="dashboard">
+				<div class="dashboard-item">
+					<div class="dashboard-item-title">Version</div>
+					<div class="dashboard-item-content" id="version-text">
+						-
+					</div>
+				</div>
+				<div class="dashboard-item">
+					<div class="dashboard-item-title" id="status-title">
+						Blocked Entries
+					</div>
+					<div class="dashboard-item-content" id="status-text">-</div>
+				</div>
+				<div class="dashboard-item">
+					<div class="dashboard-item-title">Last Updated</div>
+					<div class="dashboard-item-content" id="last-update">-</div>
+				</div>
+			</div>
 
-        </div>
+			<!-- rmlwk function box -->
+			<!-- Action Mode -->
+			<div class="list-container">
+				<div class="list-item" id="action-mode">
+					<md-icon>play_arrow</md-icon>
+					<div class="toggle-text" id="action-mode-label">
+						Action Mode
+					</div>
+					<div class="spacer"></div>
+					<div id="action-mode-status"></div>
+					<md-ripple></md-ripple>
+				</div>
+			</div>
 
-        <!-- Dashboard -->
-        <div class="dashboard">
-            <div class="dashboard-item">
-                <div class="dashboard-item-title">Version</div>
-                <div class="dashboard-item-content" id="version-text">-</div>
-            </div>
-            <div class="dashboard-item">
-                <div class="dashboard-item-title" id="status-title">Blocked Entries</div>
-                <div class="dashboard-item-content" id="status-text">-</div>
-            </div>
-            <div class="dashboard-item">
-                <div class="dashboard-item-title">Last Updated</div>
-                <div class="dashboard-item-content" id="last-update">-</div>
-            </div>
-        </div>
+			<div class="list-title">Host Operation</div>
+			<div class="list-container">
+				<!-- reset -->
+				<div class="list-item" id="reset">
+					<md-icon>history</md-icon>
+					<div class="toggle-text">Reset hosts file</div>
+					<md-ripple></md-ripple>
+				</div>
 
-        <!-- rmlwk function box -->
-        <!-- Action Mode -->
-        <div class="list-container">
-            <div class="list-item" id="action-mode">
-                <md-icon>play_arrow</md-icon>
-                <div class="toggle-text" id="action-mode-label">Action Mode</div>
-                <div class="spacer"></div>
-                <div id="action-mode-status"></div>
-                <md-ripple></md-ripple>
-            </div>
-        </div>
+				<!-- update -->
+				<div class="list-item" id="update">
+					<md-icon>cloud_download</md-icon>
+					<div class="toggle-text">Update hosts file</div>
+					<md-ripple></md-ripple>
+				</div>
 
-        <div class="list-title">Host Operation</div>
-        <div class="list-container">
-            <!-- reset -->
-            <div class="list-item" id="reset">
-                <md-icon>history</md-icon>
-                <div class="toggle-text">Reset hosts file</div>
-                <md-ripple></md-ripple>
-            </div>
+				<!-- daily update -->
+				<label class="list-item" id="daily-update">
+					<md-icon>update</md-icon>
+					<div class="toggle-text">Daily update hosts file</div>
+					<div class="spacer"></div>
+					<md-switch icons id="daily-update-toggle"></md-switch>
+					<md-ripple></md-ripple>
+				</label>
+			</div>
 
-            <!-- update -->
-            <div class="list-item" id="update">
-                <md-icon>cloud_download</md-icon>
-                <div class="toggle-text">Update hosts file</div>
-                <md-ripple></md-ripple>
-            </div>
+			<!-- Custom block -->
+			<div class="list-title">Preset Blocking Sources</div>
+			<div class="list-container custom-block">
+				<!-- porn block -->
+				<label class="list-item" id="block-porn" data-type="porn">
+					<md-icon>block</md-icon>
+					<div class="toggle-text">Block pornography sites</div>
+					<div class="spacer"></div>
+					<span class="badge blocklist-badge" id="badge-porn"></span>
+					<md-switch icons id="block-porn-toggle"></md-switch>
+					<md-ripple></md-ripple>
+				</label>
 
-            <!-- daily update -->
-            <label class="list-item" id="daily-update">
-                <md-icon>update</md-icon>
-                <div class="toggle-text">Daily update hosts file</div>
-                <div class="spacer"></div>
-                <md-switch icons id="daily-update-toggle"></md-switch>
-                <md-ripple></md-ripple>
-            </label>
-        </div>
+				<!-- gambling block -->
+				<label
+					class="list-item"
+					id="block-gambling"
+					data-type="gambling"
+				>
+					<md-icon>poker_chip</md-icon>
+					<div class="toggle-text">Block gambling sites</div>
+					<div class="spacer"></div>
+					<span
+						class="badge blocklist-badge"
+						id="badge-gambling"
+					></span>
+					<md-switch icons id="block-gambling-toggle"></md-switch>
+					<md-ripple></md-ripple>
+				</label>
 
-        <!-- Custom block -->
-        <div class="list-title">Preset Blocking Sources</div>
-        <div class="list-container custom-block">
-            <!-- porn block -->
-            <label class="list-item" id="block-porn" data-type="porn">
-                <md-icon>block</md-icon>
-                <div class="toggle-text">Block pornography sites</div>
-                <div class="spacer"></div>
-                <span class="badge blocklist-badge" id="badge-porn"></span>
-                <md-switch icons id="block-porn-toggle"></md-switch>
-                <md-ripple></md-ripple>
-            </label>
+				<!-- fakenews block -->
+				<label
+					class="list-item"
+					id="block-fakenews"
+					data-type="fakenews"
+				>
+					<md-icon>breaking_news</md-icon>
+					<div class="toggle-text">Block fake news sites</div>
+					<div class="spacer"></div>
+					<span
+						class="badge blocklist-badge"
+						id="badge-fakenews"
+					></span>
+					<md-switch icons id="block-fakenews-toggle"></md-switch>
+					<md-ripple></md-ripple>
+				</label>
 
-            <!-- gambling block -->
-            <label class="list-item" id="block-gambling" data-type="gambling">
-                <md-icon>poker_chip</md-icon>
-                <div class="toggle-text">Block gambling sites</div>
-                <div class="spacer"></div>
-                <span class="badge blocklist-badge" id="badge-gambling"></span>
-                <md-switch icons id="block-gambling-toggle"></md-switch>
-                <md-ripple></md-ripple>
-            </label>
+				<!-- social media block -->
+				<label class="list-item" id="block-social" data-type="social">
+					<md-icon>group</md-icon>
+					<div class="toggle-text">Block social media sites</div>
+					<div class="spacer"></div>
+					<span
+						class="badge blocklist-badge"
+						id="badge-social"
+					></span>
+					<md-switch icons id="block-social-toggle"></md-switch>
+					<md-ripple></md-ripple>
+				</label>
 
-            <!-- fakenews block -->
-            <label class="list-item" id="block-fakenews" data-type="fakenews">
-                <md-icon>breaking_news</md-icon>
-                <div class="toggle-text">Block fake news sites</div>
-                <div class="spacer"></div>
-                <span class="badge blocklist-badge" id="badge-fakenews"></span>
-                <md-switch icons id="block-fakenews-toggle"></md-switch>
-                <md-ripple></md-ripple>
-            </label>
+				<!-- trackers block -->
+				<label
+					class="list-item"
+					id="block-trackers"
+					data-type="trackers"
+				>
+					<md-icon>footprint</md-icon>
+					<div class="toggle-text">Block trackers sites</div>
+					<div class="spacer"></div>
+					<span
+						class="badge blocklist-badge"
+						id="badge-trackers"
+					></span>
+					<md-switch icons id="block-trackers-toggle"></md-switch>
+					<md-ripple></md-ripple>
+				</label>
 
-            <!-- social media block -->
-            <label class="list-item" id="block-social" data-type="social">
-                <md-icon>group</md-icon>
-                <div class="toggle-text">Block social media sites</div>
-                <div class="spacer"></div>
-                <span class="badge blocklist-badge" id="badge-social"></span>
-                <md-switch icons id="block-social-toggle"></md-switch>
-                <md-ripple></md-ripple>
-            </label>
+				<!-- safebrowsing block -->
+				<label
+					class="list-item"
+					id="block-safebrowsing"
+					data-type="safebrowsing"
+				>
+					<md-icon>data_loss_prevention</md-icon>
+					<div class="toggle-text">Enable Safebrowsing</div>
+					<div class="spacer"></div>
+					<span
+						class="badge blocklist-badge"
+						id="badge-safebrowsing"
+					></span>
+					<md-switch icons id="block-safebrowsing-toggle"></md-switch>
+					<md-ripple></md-ripple>
+				</label>
+			</div>
 
-            <!-- trackers block -->
-            <label class="list-item" id="block-trackers" data-type="trackers">
-                <md-icon>footprint</md-icon>
-                <div class="toggle-text">Block trackers sites</div>
-                <div class="spacer"></div>
-                <span class="badge blocklist-badge" id="badge-trackers"></span>
-                <md-switch icons id="block-trackers-toggle"></md-switch>
-                <md-ripple></md-ripple>
-            </label>
+			<!-- Query -->
+			<div class="list-title">Query</div>
+			<div class="box" id="query">
+				<div class="category-container">
+					<md-outlined-text-field
+						id="query-input"
+						label="Domain"
+						placeholder="www.example.com"
+					></md-outlined-text-field>
+					<md-filled-icon-button id="query-search" class="hidden">
+						<md-icon>search</md-icon></md-filled-icon-button
+					>
+				</div>
+				<div class="card" id="query-result-card">
+					<p id="query-result-text" class="output-line"></p>
+				</div>
+			</div>
 
-            <!-- safebrowsing block -->
-            <label class="list-item" id="block-safebrowsing" data-type="safebrowsing">
-                <md-icon>data_loss_prevention</md-icon>
-                <div class="toggle-text">Enable Safebrowsing</div>
-                <div class="spacer"></div>
-                <span class="badge blocklist-badge" id="badge-safebrowsing"></span>
-                <md-switch icons id="block-safebrowsing-toggle"></md-switch>
-                <md-ripple></md-ripple>
-            </label>
-        </div>
+			<!-- Whitelist -->
+			<div class="list-title">Whitelist</div>
+			<div class="box" id="whitelist">
+				<div class="category-container">
+					<md-outlined-text-field
+						id="whitelist-input"
+						label="Domain"
+						placeholder="www.example.com"
+					></md-outlined-text-field>
+					<md-filled-icon-button id="whitelist-add"
+						><md-icon>verified_user</md-icon></md-filled-icon-button
+					>
+				</div>
+				<div class="control-list">
+					<md-icon-button class="back"
+						><md-icon>arrow_back</md-icon></md-icon-button
+					>
+					<div class="spacer"></div>
+					<md-icon-button class="select-all"
+						><md-icon>select_all</md-icon></md-icon-button
+					>
+					<md-icon-button class="delete"
+						><md-icon>delete</md-icon></md-icon-button
+					>
+				</div>
+				<div id="whitelist-list"></div>
+			</div>
 
-        <!-- Query -->
-        <div class="list-title">Query</div>
-        <div class="box" id="query">
-            <div class="category-container">
-                <md-outlined-text-field id="query-input" label="Domain" placeholder="www.example.com"></md-outlined-text-field>
-                <md-filled-icon-button id="query-search" class="hidden"> <md-icon>search</md-icon></md-filled-icon-button>
-            </div>
-            <div class="card" id="query-result-card">
-                <p id="query-result-text"></p>
-            </div>
-        </div>
+			<!-- Blacklist -->
+			<div class="list-title">Blacklist</div>
+			<div class="box" id="blacklist">
+				<div class="category-container">
+					<md-outlined-text-field
+						id="blacklist-input"
+						label="Domain"
+						placeholder="www.example.com"
+					></md-outlined-text-field>
+					<md-filled-icon-button id="blacklist-add"
+						><md-icon>block</md-icon></md-filled-icon-button
+					>
+				</div>
+				<div class="control-list">
+					<md-icon-button class="back"
+						><md-icon>arrow_back</md-icon></md-icon-button
+					>
+					<div class="spacer"></div>
+					<md-icon-button class="select-all"
+						><md-icon>select_all</md-icon></md-icon-button
+					>
+					<md-icon-button class="delete"
+						><md-icon>delete</md-icon></md-icon-button
+					>
+				</div>
+				<div id="blacklist-list"></div>
+			</div>
 
-        <!-- Whitelist -->
-        <div class="list-title">Whitelist</div>
-        <div class="box" id="whitelist">
-            <div class="category-container">
-                <md-outlined-text-field id="whitelist-input" label="Domain" placeholder="www.example.com"></md-outlined-text-field>
-                <md-filled-icon-button id="whitelist-add"><md-icon>verified_user</md-icon></md-filled-icon-button>
-            </div>
-            <div class="control-list">
-                <md-icon-button class="back"><md-icon>arrow_back</md-icon></md-icon-button>
-                <div class="spacer"></div>
-                <md-icon-button class="select-all"><md-icon>select_all</md-icon></md-icon-button>
-                <md-icon-button class="delete"><md-icon>delete</md-icon></md-icon-button>
-            </div>
-            <div id="whitelist-list"></div>
-        </div>
+			<!-- Sources -->
+			<div class="list-title">Sources</div>
+			<div class="box" id="custom-source">
+				<div class="category-container">
+					<md-outlined-text-field
+						id="custom-source-input"
+						label="URL"
+						placeholder="https://example.com/hosts.txt"
+					></md-outlined-text-field>
+					<md-filled-icon-button id="custom-source-add"
+						><md-icon>note_add</md-icon></md-filled-icon-button
+					>
+				</div>
+				<div class="control-list">
+					<md-icon-button class="back"
+						><md-icon>arrow_back</md-icon></md-icon-button
+					>
+					<div class="spacer"></div>
+					<md-icon-button class="select-all"
+						><md-icon>select_all</md-icon></md-icon-button
+					>
+					<md-icon-button class="enable"
+						><md-icon>check_circle</md-icon></md-icon-button
+					>
+					<md-icon-button class="disable"
+						><md-icon>do_not_disturb_on</md-icon></md-icon-button
+					>
+					<md-icon-button class="delete"
+						><md-icon>delete</md-icon></md-icon-button
+					>
+				</div>
+				<div id="custom-source-list"></div>
+			</div>
 
-        <!-- Blacklist -->
-        <div class="list-title">Blacklist</div>
-        <div class="box" id="blacklist">
-            <div class="category-container">
-                <md-outlined-text-field id="blacklist-input" label="Domain" placeholder="www.example.com"></md-outlined-text-field>
-                <md-filled-icon-button id="blacklist-add"><md-icon>block</md-icon></md-filled-icon-button>
-            </div>
-            <div class="control-list">
-                <md-icon-button class="back"><md-icon>arrow_back</md-icon></md-icon-button>
-                <div class="spacer"></div>
-                <md-icon-button class="select-all"><md-icon>select_all</md-icon></md-icon-button>
-                <md-icon-button class="delete"><md-icon>delete</md-icon></md-icon-button>
-            </div>
-            <div id="blacklist-list"></div>
-        </div>
+			<!-- Custom Rules -->
+			<div class="list-title">Custom Rules</div>
+			<div class="box" id="custom-rule">
+				<div class="category-container">
+					<md-outlined-text-field
+						id="custom-rule-ip"
+						label="IP"
+						placeholder="0.0.0.0"
+					></md-outlined-text-field>
+					<md-outlined-text-field
+						id="custom-rule-domain"
+						label="Domain"
+						placeholder="example.com"
+					></md-outlined-text-field>
+					<md-filled-icon-button id="custom-rule-add"
+						><md-icon>edit_document</md-icon></md-filled-icon-button
+					>
+				</div>
+				<div class="control-list">
+					<md-icon-button class="back"
+						><md-icon>arrow_back</md-icon></md-icon-button
+					>
+					<div class="spacer"></div>
+					<md-icon-button class="select-all"
+						><md-icon>select_all</md-icon></md-icon-button
+					>
+					<md-icon-button class="delete"
+						><md-icon>delete</md-icon></md-icon-button
+					>
+				</div>
+				<div
+					id="custom-rule-list"
+					class="custom-rule-list-container"
+				></div>
+			</div>
 
-        <!-- Sources -->
-        <div class="list-title">Sources</div>
-        <div class="box" id="custom-source">
-            <div class="category-container">
-                <md-outlined-text-field id="custom-source-input" label="URL" placeholder="https://example.com/hosts.txt"></md-outlined-text-field>
-                <md-filled-icon-button id="custom-source-add"><md-icon>note_add</md-icon></md-filled-icon-button>
-            </div>
-            <div class="control-list">
-                <md-icon-button class="back"><md-icon>arrow_back</md-icon></md-icon-button>
-                <div class="spacer"></div>
-                <md-icon-button class="select-all"><md-icon>select_all</md-icon></md-icon-button>
-                <md-icon-button class="enable"><md-icon>check_circle</md-icon></md-icon-button>
-                <md-icon-button class="disable"><md-icon>do_not_disturb_on</md-icon></md-icon-button>
-                <md-icon-button class="delete"><md-icon>delete</md-icon></md-icon-button>
-            </div>
-            <div id="custom-source-list"></div>
-        </div>
+			<!-- Export logs -->
+			<div class="list-container">
+				<div class="list-item" id="export-logs">
+					<md-icon>bug_report</md-icon>
+					<div class="toggle-text" id="export-logs-text">
+						Export logs
+					</div>
+					<md-ripple></md-ripple>
+				</div>
+			</div>
+		</div>
 
-        <!-- Custom Rules -->
-        <div class="list-title">Custom Rules</div>
-        <div class="box" id="custom-rule">
-            <div class="category-container">
-                <md-outlined-text-field id="custom-rule-ip" label="IP" placeholder="0.0.0.0"></md-outlined-text-field>
-                <md-outlined-text-field id="custom-rule-domain" label="Domain" placeholder="example.com"></md-outlined-text-field>
-                <md-filled-icon-button id="custom-rule-add"><md-icon>edit_document</md-icon></md-filled-icon-button>
-            </div>
-            <div class="control-list">
-                <md-icon-button class="back"><md-icon>arrow_back</md-icon></md-icon-button>
-                <div class="spacer"></div>
-                <md-icon-button class="select-all"><md-icon>select_all</md-icon></md-icon-button>
-                <md-icon-button class="delete"><md-icon>delete</md-icon></md-icon-button>
-            </div>
-            <div id="custom-rule-list" class="custom-rule-list-container"></div>
-        </div>
+		<!-- Float button -->
+		<md-fab id="adblock-switch" variant="primary" class="float-container">
+			<div slot="icon">
+				<md-icon class="float-icon" id="pause-icon">pause</md-icon>
+				<md-icon class="float-icon" id="play-icon">play_arrow</md-icon>
+			</div>
+		</md-fab>
 
-        <!-- Export logs -->
-        <div class="list-container">
-            <div class="list-item" id="export-logs">
-                <md-icon>bug_report</md-icon>
-                <div class="toggle-text" id="export-logs-text">Export logs</div>
-                <md-ripple></md-ripple>
-            </div>
-        </div>
-    </div>
+		<!-- Dialog -->
+		<div class="dialog-wrapper" unresolved>
+			<!-- About Dialog -->
+			<md-dialog id="about-dialog">
+				<div slot="content" class="about-content">
+					<div class="about-logo-container">
+						<i class="about-logo">
+							<svg
+								viewBox="0 0 600 600"
+								xmlns="http://www.w3.org/2000/svg"
+							>
+								<title>Re malwak about logo</title>
+								<path
+									d="m351.7 133.2-17.6 28 85.8 54q4.6 3.8 9.6 10 4.1 6.5 11.4 11.3l116 73c14.3 9 31.6 7 38.9-4.5s1.6-28-12.7-37l-116-73.1a36 36 0 0 0-16.7-5.6c-10.4-2-23.3-9-23.3-9l.3.6z"
+								/>
+								<path
+									d="m334.2 161 17.6-28 134.8 85-17.6 28zM207 192.5l16.5 10.7 15.8 10.2 15 8.6 7.4 3.6 12.7-21.5-.8-11-.1-5.3.4-3.5 1-2.9 1.7-3.1 4-5 8.8-9 4.4-4.1 2.5-1.5 1.4-.5h1.3l1.4.3 1.7.7 4.2 2.7 1.8 1.2 2 1.2 3 1.3 1.4.3 1.3-.5 1.4-.8 2-1.6 4.7-5 6.6-9 6.1-10.5 3.6-7.4 3.8-9.3 1.2-4.5v-2.5l-.5-2-2-2.5-7.8-6.7-2.6-2.6-1-1.3-.2-.9-.2-.9.3-1.1.7-2 11.8-20.4 11.1-15.9 5-5 14.7-11.1 1.7-1.7.5-.8v-.5l-.8-.4-3.3.3-5.5 1.2-5.6 1.4-12.2 4.2-5.4 2-10.8 4.5-4.5 2-6.2 3.1-12.9 8.4-7.7 5.9-10.3 8.6-10.6 11-8 9.7-12.7 19.4-6.3 10.7-5.1 8.1-1 2.3-.4 2.5v2.1l-.5 1.8-1 2.8-1.8 3.8-2.5 3.7-4.2 4.6-2.7 2.2-3.3 2.3-2.5 1-1.6.2h-1.7l-1.7.4-1.9 1-2.1 2-3.3 4.6zM86.5 243.4c-5 .1-9.5 3.2-11.3 8l-1.2 3.2c-2.5 6.5.8 13.7 7.3 16.2l24.4 9.2a39 39 0 0 1 13.3 9.4l.2.4 4.2 6.1v.1c1 1.6 3.4 6.2 1 10.5l-3.2 4.3-1.6 2c-1.5 1.6-5.9 10-8.6 17.7s-2.6 11.9-2.6 11.9.4 3.4 1.3 5.4c.7 1.7 2.4 2 3 2h.2l53.5.1H248c.5-.1 2.2-.4 3-2 .8-2.1 1.2-5.5 1.2-5.5s.2-4.2-2.6-11.9a82 82 0 0 0-8.6-17.7 42 42 0 0 1-4.7-6.2c-2.5-4.4-.1-9 .8-10.6h.1l4.2-6.1q0-.3.3-.4a38 38 0 0 1 13.2-9.4l24.4-9.3c6.6-2.5 9.8-9.7 7.3-16.2l-1.2-3.1a12.5 12.5 0 0 0-16.2-7.3l-36.8 14-1.7.8q-3.4 1.3-5.7 4.6l-13.2 19.2a7 7 0 0 1-6.1 2l-5-1.7h-.1a72 72 0 0 0-19-2.6h-1.8l-4.5.3-2 .1q-6.6.5-13.1 2.3-.4-.1-1.6.4l-3.5 1.2a7 7 0 0 1-6.1-2l-13.2-19.2a13 13 0 0 0-5.8-4.6l-1.7-.8-36.8-14q-2.4-1-5-.8M14.2 358.2a13.3 13.3 0 0 0-9.1 23l39.6 38.6q1 1 2.2 1.8 3.4 2.5 8 2.6h36.5v48.6l.2 6H69.5q-4.6 0-8 2.7-1.2.8-2.3 1.8L19.7 522a13.3 13.3 0 1 0 18.7 19l35.8-35h23.6a88 88 0 0 0 58.3 51.9l.1-27.4q0-1.7.5-3.4.3-4.6 3.9-8l24.8-23.3a25 25 0 0 1-1.2-7.7 25 25 0 0 1 25.2-25.2 25 25 0 0 1 25.1 25.2 25 25 0 0 1-25.1 25.2l-4.3-.4-23 21.5V561a88 88 0 0 0 79.3-55h25l36 35a13.3 13.3 0 1 0 18.6-19l-39.5-38.7q-1-1-2.3-1.8-3.4-2.5-8-2.6h-23.7q.3-3 .2-6v-48.7h38.1q4.6-.1 8-2.6 1.3-.7 2.2-1.8l39.6-38.7a13.3 13.3 0 0 0-9.1-22.9q-5.4 0-9.5 3.9l-36 35h-33.3v-3.8c0-7.5-6-13.5-13.5-13.5h-50.4l-.1 28.6q0 1.9-.5 3.4-.3 4.6-3.9 8.1l-24.8 23.3a25 25 0 0 1 1.2 7.7 25 25 0 0 1-25.2 25.1 25 25 0 0 1-25.1-25.1 25 25 0 0 1 25.1-25.2l4.3.4 23-21.5v-24.8h-72.5c-7.4 0-13.5 6-13.5 13.5v3.8H59.6l-35.9-35q-4-3.9-9.5-3.9"
+								/>
+							</svg>
+						</i>
+					</div>
+					<p id="module-name">Re-Malwack</p>
+					<p id="author">by ZG089<br />WebUI by KOWX712</p>
+					<div class="link">
+						<div class="link-icon" id="telegram">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 512 512"
+							>
+								<!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+								<title>Telegram icon</title>
+								<path
+									d="M248 8C111 8 0 119 0 256S111 504 248 504 496 393 496 256 385 8 248 8zM363 176.7c-3.7 39.2-19.9 134.4-28.1 178.3-3.5 18.6-10.3 24.8-16.9 25.4-14.4 1.3-25.3-9.5-39.3-18.7-21.8-14.3-34.2-23.2-55.3-37.2-24.5-16.1-8.6-25 5.3-39.5 3.7-3.8 67.1-61.5 68.3-66.7 .2-.7 .3-3.1-1.2-4.4s-3.6-.8-5.1-.5q-3.3 .7-104.6 69.1-14.8 10.2-26.9 9.9c-8.9-.2-25.9-5-38.6-9.1-15.5-5-27.9-7.7-26.8-16.3q.8-6.7 18.5-13.7 108.4-47.2 144.6-62.3c68.9-28.6 83.2-33.6 92.5-33.8 2.1 0 6.6 .5 9.6 2.9a10.5 10.5 0 0 1 3.5 6.7A43.8 43.8 0 0 1 363 176.7z"
+								/>
+							</svg>
+							<span class="link-text"
+								>Telegram Support Group</span
+							>
+							<md-ripple></md-ripple>
+						</div>
+						<div class="link-icon" id="github">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 512 512"
+							>
+								<!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+								<title>github icon</title>
+								<path
+									d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3 .3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5 .3-6.2 2.3zm44.2-1.7c-2.9 .7-4.9 2.6-4.6 4.9 .3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3 .7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3 .3 2.9 2.3 3.9 1.6 1 3.6 .7 4.3-.7 .7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3 .7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3 .7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"
+								/>
+							</svg>
+							<span class="link-text">GitHub</span>
+							<md-ripple></md-ripple>
+						</div>
+						<div class="link-icon" id="xda">
+							<md-icon>forum</md-icon>
+							<span class="link-text">XDA Thread</span>
+							<md-ripple></md-ripple>
+						</div>
+						<div class="link-icon" id="sponsor">
+							<md-icon>local_cafe</md-icon>
+							<span class="link-text">Support Us</span>
+							<md-ripple></md-ripple>
+						</div>
+					</div>
 
-    <!-- Float button -->
-    <md-fab id="adblock-switch" variant="primary" class="float-container">
-        <div slot="icon">
-            <md-icon class="float-icon" id="pause-icon">pause</md-icon>
-            <md-icon class="float-icon" id="play-icon">play_arrow</md-icon>
-        </div>
-    </md-fab>
+					<div class="credit">
+						<div class="credit-list">
+							<!-- list of users will be here -->
+						</div>
+						<div class="credit-placeholder"></div>
+					</div>
+				</div>
+			</md-dialog>
 
-    <!-- Dialog -->
-    <div class="dialog-wrapper" unresolved>
-        <!-- About Dialog -->
-        <md-dialog id="about-dialog">
-        <div slot="content" class="about-content">
-            <div class="about-logo-container">
-                <i class="about-logo">
-                    <svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
-                    <title>Re malwak about logo</title>
-                        <path
-                            d="m351.7 133.2-17.6 28 85.8 54q4.6 3.8 9.6 10 4.1 6.5 11.4 11.3l116 73c14.3 9 31.6 7 38.9-4.5s1.6-28-12.7-37l-116-73.1a36 36 0 0 0-16.7-5.6c-10.4-2-23.3-9-23.3-9l.3.6z" />
-                        <path
-                            d="m334.2 161 17.6-28 134.8 85-17.6 28zM207 192.5l16.5 10.7 15.8 10.2 15 8.6 7.4 3.6 12.7-21.5-.8-11-.1-5.3.4-3.5 1-2.9 1.7-3.1 4-5 8.8-9 4.4-4.1 2.5-1.5 1.4-.5h1.3l1.4.3 1.7.7 4.2 2.7 1.8 1.2 2 1.2 3 1.3 1.4.3 1.3-.5 1.4-.8 2-1.6 4.7-5 6.6-9 6.1-10.5 3.6-7.4 3.8-9.3 1.2-4.5v-2.5l-.5-2-2-2.5-7.8-6.7-2.6-2.6-1-1.3-.2-.9-.2-.9.3-1.1.7-2 11.8-20.4 11.1-15.9 5-5 14.7-11.1 1.7-1.7.5-.8v-.5l-.8-.4-3.3.3-5.5 1.2-5.6 1.4-12.2 4.2-5.4 2-10.8 4.5-4.5 2-6.2 3.1-12.9 8.4-7.7 5.9-10.3 8.6-10.6 11-8 9.7-12.7 19.4-6.3 10.7-5.1 8.1-1 2.3-.4 2.5v2.1l-.5 1.8-1 2.8-1.8 3.8-2.5 3.7-4.2 4.6-2.7 2.2-3.3 2.3-2.5 1-1.6.2h-1.7l-1.7.4-1.9 1-2.1 2-3.3 4.6zM86.5 243.4c-5 .1-9.5 3.2-11.3 8l-1.2 3.2c-2.5 6.5.8 13.7 7.3 16.2l24.4 9.2a39 39 0 0 1 13.3 9.4l.2.4 4.2 6.1v.1c1 1.6 3.4 6.2 1 10.5l-3.2 4.3-1.6 2c-1.5 1.6-5.9 10-8.6 17.7s-2.6 11.9-2.6 11.9.4 3.4 1.3 5.4c.7 1.7 2.4 2 3 2h.2l53.5.1H248c.5-.1 2.2-.4 3-2 .8-2.1 1.2-5.5 1.2-5.5s.2-4.2-2.6-11.9a82 82 0 0 0-8.6-17.7 42 42 0 0 1-4.7-6.2c-2.5-4.4-.1-9 .8-10.6h.1l4.2-6.1q0-.3.3-.4a38 38 0 0 1 13.2-9.4l24.4-9.3c6.6-2.5 9.8-9.7 7.3-16.2l-1.2-3.1a12.5 12.5 0 0 0-16.2-7.3l-36.8 14-1.7.8q-3.4 1.3-5.7 4.6l-13.2 19.2a7 7 0 0 1-6.1 2l-5-1.7h-.1a72 72 0 0 0-19-2.6h-1.8l-4.5.3-2 .1q-6.6.5-13.1 2.3-.4-.1-1.6.4l-3.5 1.2a7 7 0 0 1-6.1-2l-13.2-19.2a13 13 0 0 0-5.8-4.6l-1.7-.8-36.8-14q-2.4-1-5-.8M14.2 358.2a13.3 13.3 0 0 0-9.1 23l39.6 38.6q1 1 2.2 1.8 3.4 2.5 8 2.6h36.5v48.6l.2 6H69.5q-4.6 0-8 2.7-1.2.8-2.3 1.8L19.7 522a13.3 13.3 0 1 0 18.7 19l35.8-35h23.6a88 88 0 0 0 58.3 51.9l.1-27.4q0-1.7.5-3.4.3-4.6 3.9-8l24.8-23.3a25 25 0 0 1-1.2-7.7 25 25 0 0 1 25.2-25.2 25 25 0 0 1 25.1 25.2 25 25 0 0 1-25.1 25.2l-4.3-.4-23 21.5V561a88 88 0 0 0 79.3-55h25l36 35a13.3 13.3 0 1 0 18.6-19l-39.5-38.7q-1-1-2.3-1.8-3.4-2.5-8-2.6h-23.7q.3-3 .2-6v-48.7h38.1q4.6-.1 8-2.6 1.3-.7 2.2-1.8l39.6-38.7a13.3 13.3 0 0 0-9.1-22.9q-5.4 0-9.5 3.9l-36 35h-33.3v-3.8c0-7.5-6-13.5-13.5-13.5h-50.4l-.1 28.6q0 1.9-.5 3.4-.3 4.6-3.9 8.1l-24.8 23.3a25 25 0 0 1 1.2 7.7 25 25 0 0 1-25.2 25.1 25 25 0 0 1-25.1-25.1 25 25 0 0 1 25.1-25.2l4.3.4 23-21.5v-24.8h-72.5c-7.4 0-13.5 6-13.5 13.5v3.8H59.6l-35.9-35q-4-3.9-9.5-3.9" />
-                    </svg>
-                </i>
-            </div>
-            <p id="module-name">Re-Malwack</p>
-            <p id="author">by ZG089<br>WebUI by KOWX712</p>
-            <p>
-            <div class="link">
-                <div class="link-icon" id="telegram">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                        <title>Telegram icon</title>
-                        <path
-                            d="M248 8C111 8 0 119 0 256S111 504 248 504 496 393 496 256 385 8 248 8zM363 176.7c-3.7 39.2-19.9 134.4-28.1 178.3-3.5 18.6-10.3 24.8-16.9 25.4-14.4 1.3-25.3-9.5-39.3-18.7-21.8-14.3-34.2-23.2-55.3-37.2-24.5-16.1-8.6-25 5.3-39.5 3.7-3.8 67.1-61.5 68.3-66.7 .2-.7 .3-3.1-1.2-4.4s-3.6-.8-5.1-.5q-3.3 .7-104.6 69.1-14.8 10.2-26.9 9.9c-8.9-.2-25.9-5-38.6-9.1-15.5-5-27.9-7.7-26.8-16.3q.8-6.7 18.5-13.7 108.4-47.2 144.6-62.3c68.9-28.6 83.2-33.6 92.5-33.8 2.1 0 6.6 .5 9.6 2.9a10.5 10.5 0 0 1 3.5 6.7A43.8 43.8 0 0 1 363 176.7z" />
-                    </svg>
-                    <span class="link-text">Telegram Support Group</span>
-                    <md-ripple></md-ripple>
-                </div>
-                <div class="link-icon" id="github">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                        <title>github icon</title>
-                        <path
-                            d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3 .3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5 .3-6.2 2.3zm44.2-1.7c-2.9 .7-4.9 2.6-4.6 4.9 .3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3 .7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3 .3 2.9 2.3 3.9 1.6 1 3.6 .7 4.3-.7 .7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3 .7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3 .7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z" />
-                    </svg>
-                    <span class="link-text">GitHub</span>
-                    <md-ripple></md-ripple>
-                </div>
-                <div class="link-icon" id="xda">
-                    <md-icon>forum</md-icon>
-                    <span class="link-text">XDA Thread</span>
-                    <md-ripple></md-ripple>
-                </div>
-                <div class="link-icon" id="sponsor">
-                    <md-icon>local_cafe</md-icon>
-                    <span class="link-text">Support Us</span>
-                    <md-ripple></md-ripple>
-                </div>
-            </div>
-            </p>
-            <div class="credit">
-                <div class="credit-list">
-                    <!-- list of users will be here -->
-                </div>
-                <div class="credit-placeholder"></div>
-            </div>
-        </div>
-        </md-dialog>
+			<!-- Confirmation dialog -->
+			<md-dialog id="confirmation-dialog">
+				<div slot="headline">Confirm Reset?</div>
+				<div slot="content">
+					Are you sure you want to reset hosts file?
+				</div>
+				<div slot="actions">
+					<md-outlined-button id="cancel-reset"
+						>Cancel</md-outlined-button
+					>
+					<md-filled-button id="confirm-reset"
+						>Reset</md-filled-button
+					>
+				</div>
+			</md-dialog>
 
-        <!-- Confirmation dialog -->
-        <md-dialog id="confirmation-dialog">
-        <div slot="headline">Confirm Reset?</div>
-        <div slot="content">Are you sure you want to reset hosts file?</div>
-        <div slot="actions">
-            <md-outlined-button id="cancel-reset">Cancel</md-outlined-button>
-            <md-filled-button id="confirm-reset">Reset</md-filled-button>
-        </div>
-        </md-dialog>
+			<!-- Edit dialog -->
+			<md-dialog id="edit-dialog" class="input-dialog">
+				<div slot="headline">Edit</div>
+				<div slot="content" class="edit-dialog-content">
+					<md-outlined-text-field
+						id="edit-name"
+						label="Name (Optional)"
+					></md-outlined-text-field>
+					<md-outlined-text-field
+						id="edit-domain"
+						label="Domain"
+						type="textarea"
+						rows="5"
+					></md-outlined-text-field>
+				</div>
+				<div slot="actions">
+					<md-outlined-button id="cancel-edit"
+						>Cancel</md-outlined-button
+					>
+					<md-filled-button id="confirm-edit">Save</md-filled-button>
+				</div>
+			</md-dialog>
+		</div>
 
-        <!-- Edit dialog -->
-        <md-dialog id="edit-dialog" class="input-dialog">
-            <div slot="headline">Edit</div>
-            <div slot="content" class="edit-dialog-content">
-                <md-outlined-text-field id="edit-name" label="Name (Optional)"></md-outlined-text-field>
-                <md-outlined-text-field id="edit-domain" label="Domain" type="textarea" rows="5"></md-outlined-text-field>
-            </div>
-            <div slot="actions">
-                <md-outlined-button id="cancel-edit">Cancel</md-outlined-button>
-                <md-filled-button id="confirm-edit">Save</md-filled-button>
-            </div>
-        </md-dialog>
-    </div>
+		<!-- Loading overlay -->
+		<div class="overlay" id="loading-overlay" unresolved>
+			<md-circular-progress indeterminate></md-circular-progress>
+		</div>
 
-    <!-- Loading overlay -->
-    <div class="overlay" id="loading-overlay" unresolved>
-        <md-circular-progress indeterminate></md-circular-progress>
-    </div>
+		<!-- Output terminal -->
+		<div class="terminal" unresolved>
+			<div class="terminal-header">
+				<md-icon-button class="back-icon" id="aciton-back-btn"
+					><md-icon>arrow_back</md-icon></md-icon-button
+				>
+				<span>Action</span>
+			</div>
+			<div class="terminal-content">
+				<div class="output-text" id="terminal-output-text"></div>
+			</div>
+			<md-fab class="close-terminal" variant="primary">
+				<md-icon slot="icon">close</md-icon>
+			</md-fab>
+		</div>
 
-    <!-- Output terminal -->
-    <div class="terminal" unresolved>
-        <div class="terminal-header">
-            <md-icon-button class="back-icon" id="aciton-back-btn"><md-icon>arrow_back</md-icon></md-icon-button>
-            <span>Action</span>
-        </div>
-        <div class="terminal-content">
-            <div class="output-text" id="terminal-output-text"></div>
-        </div>
-        <md-fab class="close-terminal" variant="primary">
-            <md-icon slot="icon">close</md-icon>
-        </md-fab>
-    </div>
+		<!-- Prompt -->
+		<div class="prompt-container">
+			<div id="prompt" class="prompt"></div>
+		</div>
 
-    <!-- Prompt -->
-    <div class="prompt-container">
-        <div id="prompt" class="prompt"></div>
-    </div>
-
-    <div class="footer"></div>
-</body>
+		<div class="footer"></div>
+	</body>
 </html>

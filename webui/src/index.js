@@ -2,6 +2,9 @@ import { exec, spawn, toast } from "kernelsu-alt";
 import "@material/web/all.js";
 import ReMalwareIcon from "./assets/Re-Malware.svg";
 
+// import modules
+import { querySearchButtonShow } from "./modules/searchQuery.js";
+
 const basePath = "/data/adb/Re-Malwack";
 const modulePath = "/data/adb/modules/Re-Malwack";
 const CONFIG_PATH = `${basePath}/config.sh`;
@@ -629,6 +632,9 @@ function handleQuery() {
 			resultText.appendChild(div);
 		});
 	});
+
+	// hide the query search button stopImmediatePropagation
+	querySearchButtonShow(false);
 }
 
 // Prevent input box blocked by keyboard
@@ -1256,17 +1262,9 @@ function setupEventListener() {
 		.addEventListener("click", () => handleQuery());
 
 	// query input
-	let queryModuleLoaded = false;
-	document
-		.getElementById("query-input")
-		.addEventListener("input", async (e) => {
-			if (!queryModuleLoaded) {
-				const module = await import("./modules/searchQuery.js");
-				window.querySearchButtonShow = module.querySearchButtonShow;
-				queryModuleLoaded = true;
-			}
-			window.querySearchButtonShow(e.target.value.trim().length > 0);
-		});
+	document.getElementById("query-input").addEventListener("input", (e) => {
+		querySearchButtonShow(e.target.value.trim().length > 0);
+	});
 }
 
 // Function to handle festival themes
