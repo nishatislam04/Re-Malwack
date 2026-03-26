@@ -73,6 +73,22 @@ count_entries() {
     grep -c '^[^#[:space:]]' "$file" 2>/dev/null || true
 }
 
+list_source_urls_from_file() {
+    file="$1"
+    [ -f "$file" ] || return 0
+    awk '
+        /^# OFF # / { print $4; next }
+        /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+        { print $1 }
+    ' "$file"
+}
+
+source_url_exists_in_file() {
+    url="$1"
+    file="$2"
+    list_source_urls_from_file "$file" | grep -Fxq "$url"
+}
+
 append_hosts_entry() {
     file="$1"
     ip="$2"

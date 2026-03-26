@@ -115,57 +115,6 @@ mkdir -p $MODPATH/system/etc
 rm -rf $persist_dir/logs/* 2>/dev/null
 rm -rf $persist_dir/cache/* 2>/dev/null
 
-compare_sources() {
-    awk '!/^#|^$/ {print $1}' "$1" | sort > "$persist_dir/tmp_cmp1"
-    awk '!/^#|^$/ {print $1}' "$2" | sort > "$persist_dir/tmp_cmp2"
-    cmp -s "$persist_dir/tmp_cmp1" "$persist_dir/tmp_cmp2"
-    res=$?
-    rm -f "$persist_dir/tmp_cmp1" "$persist_dir/tmp_cmp2"
-    return $res
-}
-
-update_profile() {
-    local prof_file="$1"
-    local dest_file="$2"
-    
-    if [ ! -s "$dest_file" ]; then
-        cp -f "$prof_file" "$dest_file"
-        return
-    fi
-    
-    awk '
-    NR==FNR {
-        if (/^# OFF # /) {
-            off_urls[$4] = 1
-        }
-        next
-    }
-    {
-        if (/^# OFF # /) {
-            url = $4
-        } else if ($1 !~ /^#/) {
-            url = $1
-            if (off_urls[url] == 1) {
-                $0 = "# OFF # " $0
-            }
-        } else {
-            url = ""
-        }
-        
-        if (url == "") {
-            print $0
-            next
-        }
-        
-        if (!seen[url]++) {
-            print $0
-        }
-    }
-    ' "$dest_file" "$prof_file" > "${dest_file}.tmp"
-    
-    mv -f "${dest_file}.tmp" "$dest_file"
-}
-
 mem_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
 if [ -z "$mem_kb" ]; then
     mem_kb=4000000
@@ -179,64 +128,18 @@ else
     detected_profile="aggressive"
 fi
 
-current_profile=""
-if [ -f "$config_file" ]; then
-    current_profile=$(grep "^profile=" "$config_file" 2>/dev/null | cut -d= -f2)
-fi
-
-if [ ! -s "$persist_dir/sources.txt" ]; then
-    update_profile "$MODPATH/profiles/${detected_profile}.txt" "$persist_dir/sources.txt"
-    set_prop profile "$detected_profile" "$config_file"
-    ui_print "[*] Auto-selected profile: $detected_profile"
+if [ -n "$profile" ]; then
+    detected_profile=$profile
+    ui_print "[*] Using hosts profile: $detected_profile"
 else
-    if [ -z "$current_profile" ]; then
-        if compare_sources "$persist_dir/sources.txt" "$MODPATH/profiles/default.txt"; then
-            update_profile "$MODPATH/profiles/${detected_profile}.txt" "$persist_dir/sources.txt"
-            set_prop profile "$detected_profile" "$config_file"
-            ui_print "[*] Auto-selected profile: $detected_profile"
-        else
-            set_prop profile custom "$config_file"
-            ui_print "[*] Customized hosts sources detected, profile has been set to custom."
-        fi
-    else
-        if [ "$current_profile" = "custom" ]; then
-            ui_print "[*] Custom profile detected, keeping hosts sources as is."
-        else
-            if [ -f "$MODPATH/profiles/${current_profile}.txt" ]; then
-                update_profile "$MODPATH/profiles/${current_profile}.txt" "$persist_dir/sources.txt"
-                ui_print "[*] Updating hosts sources for your $current_profile profile."
-            else
-                ui_print "[!] Detected missing profile $current_profile, reverting to $detected_profile."
-                update_profile "$MODPATH/profiles/${detected_profile}.txt" "$persist_dir/sources.txt"
-                set_prop profile "$detected_profile" "$config_file"
-            fi
-        fi
-    fi
+    ui_print "[*] Auto-selected profile: $detected_profile"
+    set_prop profile "$detected_profile" "$config_file"
 fi
 
-# Import from other ad-block modules (All respect to other ad-block modules developers)
-. $MODPATH/import.sh
+cp -f "$MODPATH/profiles/${detected_profile}.txt" "$persist_dir/sources.txt"
 
-awk '
-{
-    if (/^# OFF # /) {
-        url = $4
-    } else if ($1 !~ /^#/) {
-        url = $1
-    } else {
-        url = ""
-    }
-    
-    if (url == "") {
-        print $0
-        next
-    }
-    
-    if (!seen[url]++) {
-        print $0
-    }
-}' "$persist_dir/sources.txt" > "$persist_dir/sources.txt.tmp"
-mv -f "$persist_dir/sources.txt.tmp" "$persist_dir/sources.txt"
+# Import config from other modules
+. $MODPATH/import.sh
 
 if ping -c 1 -w 5 8.8.8.8 &>/dev/null; then
     # Initialize
@@ -269,8 +172,8 @@ if ping -c 1 -w 5 8.8.8.8 &>/dev/null; then
 else
     ui_print "[i] No internet connection, skipping hosts initialization. You may initialize it later after reboot."
     # In case of module update without internet while there's an existing hosts file
-        # We don't want to delete user's existing hosts file, so we just move it to the new location if it exists
-        # otherwise we just create an empty hosts file to prevent potential issues.
+    # We don't want to delete user's existing hosts file, so we just move it to the new location if it exists
+    # otherwise we just create an empty hosts file to prevent potential issues.
     if [ ! -f /data/adb/modules/Re-Malwack/system/etc/hosts ]; then
         cat /system/etc/hosts > $MODPATH/system/etc/hosts
         status_msg="Status: Awaiting reboot 🔃"

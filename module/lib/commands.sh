@@ -3,24 +3,20 @@ RMLWK_LIB_COMMANDS=1
 
 cmd_profile() {
     profile_name="$1"
-    if [ -z "$profile_name" ] || { [ ! -f "$MODDIR/profiles/${profile_name}.txt" ] && [ "$profile_name" != "custom" ]; }; then
-        echo "[!] Invalid profile or missing argument."
-        echo "[i] Available profiles: default, lite, balanced, aggressive, custom"
-        exit 1
-    fi
+    case "$profile_name" in
+        default|lite|balanced|aggressive) ;;
+        *)
+            echo "[!] Invalid profile or missing argument."
+            echo "[i] Available profiles: default, lite, balanced, aggressive"
+            exit 1
+            ;;
+    esac
 
-    if [ "$profile_name" = "custom" ]; then
-        echo "[*] Switched to custom profile."
-        set_prop profile custom "$persist_dir/config.sh"
-        log_message SUCCESS "Profile switched to custom."
-        echo "[✓] Switched to custom profile."
-    else
-        echo "[*] Switching to $profile_name profile..."
-        cp -f "$MODDIR/profiles/${profile_name}.txt" "$persist_dir/sources.txt"
-        set_prop profile "$profile_name" "$persist_dir/config.sh"
-        log_message SUCCESS "Profile switched to $profile_name."
-        echo "[✓] Profile switched to $profile_name. Please update hosts to apply changes."
-    fi
+    echo "[*] Switching to $profile_name profile..."
+    set_prop profile "$profile_name" "$persist_dir/config.sh"
+    cp -f "$MODDIR/profiles/${profile_name}.txt" "$persist_dir/sources.txt"
+    log_message SUCCESS "Profile switched to $profile_name."
+    echo "[✓] Profile switched to $profile_name. Please update hosts to apply changes."
 }
 
 cmd_reset() {
@@ -294,12 +290,12 @@ cmd_custom_source() {
     if [ -z "$option" ] || [ $# -eq 0 ]; then
         echo "[!] Missing arguments."
         echo "Usage: rmlwk --custom-source <add/remove> <domain1> [domain2] [domain3] ..."
-        display_sources=$(cat "$persist_dir/sources.txt" 2>/dev/null)
+        display_sources=$(cat "$persist_dir/custom_source.txt" 2>/dev/null)
         if [ -n "$display_sources" ]; then
-            echo "Current sources:"
+            echo "Current custom sources:"
             echo "$display_sources"
         else
-            echo "Current sources: no saved sources"
+            echo "Current custom sources: no saved sources"
         fi
         exit 1
     fi
@@ -309,7 +305,7 @@ cmd_custom_source() {
         exit 1
     fi
 
-    touch "$persist_dir/sources.txt"
+    touch "$persist_dir/custom_source.txt"
     case "$option" in
         add)
             domain="$1"
@@ -319,16 +315,15 @@ cmd_custom_source() {
                 echo "[!] Invalid domain: $domain"
                 exit 1
             fi
-            if awk '{print $1}' "$persist_dir/sources.txt" 2>/dev/null | grep -Fxq "$domain"; then
+            if source_url_exists_in_file "$domain" "$persist_dir/custom_source.txt" || source_url_exists_in_file "$domain" "$MODDIR/profiles/$profile.txt"; then
                 echo "[!] $domain is already in sources."
             else
                 line="$domain"
                 [ -n "$name" ] && line="$domain # $name"
-                add_entry "$line" "$persist_dir/sources.txt"
+                add_entry "$line" "$persist_dir/custom_source.txt"
                 log_message SUCCESS "Added $line to sources."
                 echo "[✓] Added $line to sources."
             fi
-            set_prop profile custom "$persist_dir/config.sh"
             ;;
         edit)
             old_domain="$1"
@@ -339,14 +334,17 @@ cmd_custom_source() {
                 echo "[!] Invalid new domain: $new_domain"
                 exit 1
             fi
-            if awk '{print $1}' "$persist_dir/sources.txt" 2>/dev/null | grep -Fxq "$old_domain"; then
-                remove_entry "$old_domain" "$persist_dir/sources.txt" 1
+            if source_url_exists_in_file "$new_domain" "$MODDIR/profiles/$profile.txt" || { [ "$new_domain" != "$old_domain" ] && source_url_exists_in_file "$new_domain" "$persist_dir/custom_source.txt"; }; then
+                echo "[!] $new_domain is already in sources."
+                exit 1
+            fi
+            if source_url_exists_in_file "$old_domain" "$persist_dir/custom_source.txt"; then
+                remove_entry "$old_domain" "$persist_dir/custom_source.txt" 1
                 line="$new_domain"
                 [ -n "$new_name" ] && line="$new_domain # $new_name"
-                add_entry "$line" "$persist_dir/sources.txt"
+                add_entry "$line" "$persist_dir/custom_source.txt"
                 log_message SUCCESS "Edited $old_domain to $line."
                 echo "[✓] Edited $old_domain to $line."
-                set_prop profile custom "$persist_dir/config.sh"
             else
                 echo "[!] $old_domain was not found in sources."
                 exit 1
@@ -361,13 +359,13 @@ cmd_custom_source() {
                     failed_process="$failed_process $domain"
                     continue
                 fi
-                if awk '{print $1}' "$persist_dir/sources.txt" 2>/dev/null | grep -Fxq "$domain" || awk '{print $4}' "$persist_dir/sources.txt" 2>/dev/null | grep -Fxq "$domain"; then
+                if source_url_exists_in_file "$domain" "$persist_dir/custom_source.txt"; then
                     if [ "$option" = "enable" ]; then
-                        sed -i "s|^# OFF # $domain|$domain|g" "$persist_dir/sources.txt"
+                        sed -i "s|^# OFF # $domain|$domain|g" "$persist_dir/custom_source.txt"
                         log_message SUCCESS "Enabled $domain in sources."
                         echo "[✓] Enabled $domain in sources."
                     else
-                        sed -i "s|^$domain|# OFF # $domain|g" "$persist_dir/sources.txt"
+                        sed -i "s|^$domain|# OFF # $domain|g" "$persist_dir/custom_source.txt"
                         log_message SUCCESS "Disabled $domain in sources."
                         echo "[✓] Disabled $domain in sources."
                     fi
@@ -389,9 +387,9 @@ cmd_custom_source() {
                     failed_removals="$failed_removals $domain_to_remove"
                     continue
                 fi
-                if grep -E "^(# OFF # )?$domain_to_remove" "$persist_dir/sources.txt" >/dev/null 2>&1; then
-                    awk -v dom="$domain_to_remove" '{ actual=$1; if (actual=="#") actual=$4; if (actual != dom) print $0 }' "$persist_dir/sources.txt" > "$persist_dir/sources.tmp"
-                    mv "$persist_dir/sources.tmp" "$persist_dir/sources.txt"
+                if source_url_exists_in_file "$domain_to_remove" "$persist_dir/custom_source.txt"; then
+                    awk -v dom="$domain_to_remove" '{ actual=$1; if (actual=="#") actual=$4; if (actual != dom) print $0 }' "$persist_dir/custom_source.txt" > "$persist_dir/sources.tmp"
+                    mv "$persist_dir/sources.tmp" "$persist_dir/custom_source.txt"
                     log_message SUCCESS "Removed $domain_to_remove from sources."
                     echo "[✓] Removed $domain_to_remove from sources."
                     total_removed=$((total_removed + 1))
@@ -402,7 +400,6 @@ cmd_custom_source() {
             done
             [ "$total_removed" -gt 0 ] || { echo "[!] No sources were removed"; exit 1; }
             [ -n "$failed_removals" ] && echo "[i] Failed to remove:$failed_removals"
-            set_prop profile custom "$persist_dir/config.sh"
             ;;
     esac
 }
@@ -526,7 +523,13 @@ cmd_toggle_blocklist() {
 
 cmd_update_hosts() {
     start_time=$(get_current_time)
-    awk '!/^#|^$/ {print $1}' "$persist_dir/sources.txt" | grep http >/dev/null || abort "No hosts sources were found, Aborting."
+    hosts_list=$( {
+        list_source_urls_from_file "$MODDIR/profiles/$profile.txt"
+        list_source_urls_from_file "$persist_dir/custom_source.txt"
+    } | sort -u)
+
+    [ -n "$hosts_list" ] || abort "No hosts sources were found, Aborting."
+    echo "$hosts_list" | grep http >/dev/null || abort "No hosts sources were found, Aborting."
     is_protection_paused && abort "Ad-block is paused. Please resume before running this command."
 
     if [ -d /data/adb/modules/Re-Malwack ]; then
@@ -539,11 +542,10 @@ cmd_update_hosts() {
 
     check_internet
     combined_file="${tmp_hosts}_all"
-    : > "$combined_file"
+    echo "" > "$combined_file"
     echo "[*] Fetching base hosts..."
     log_message "Starting download of base hosts"
 
-    hosts_list=$(awk '!/^#|^$/ {print $1}' "$persist_dir/sources.txt" | sort -u)
     counter=0
     download_limit=3
     download_count=0
@@ -555,7 +557,6 @@ cmd_update_hosts() {
         if [ "$download_count" -ge "$download_limit" ]; then
             wait
             download_count=0
-            sleep 0.5
         fi
     done
     wait
@@ -564,7 +565,7 @@ cmd_update_hosts() {
     job_limit=3
     job_count=0
     mkdir -p "$persist_dir/counts"
-    : > "$persist_dir/counts/sources.counts"
+    echo "" > "$persist_dir/counts/sources.counts"
     for i in $(seq 1 "$counter"); do
         (
             if [ -f "${tmp_hosts}${i}" ]; then
@@ -582,7 +583,6 @@ cmd_update_hosts() {
         if [ "$job_count" -ge "$job_limit" ]; then
             wait
             job_count=0
-            sleep 0.25
         fi
     done
     wait
@@ -629,7 +629,7 @@ show_help() {
     echo ""
     echo "[i] Usage: rmlwk [--argument] OPTIONAL: [--quiet]"
     echo "--update-hosts, -u: Update the hosts file."
-    echo "--profile, -p <default|lite|balanced|aggressive|custom>: Switch adblock level profile."
+    echo "--profile, -p <default|lite|balanced|aggressive>: Switch adblock level profile."
     echo "--auto-update, -a <enable|disable>: Toggle auto hosts update."
     echo "--custom-source, -c <add|remove|edit> ...: Add/remove/edit custom hosts sources."
     echo "--custom-rule, -cr <add|remove> <IP> <domain>: Add or remove custom hosts rules."

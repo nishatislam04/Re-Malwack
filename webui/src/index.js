@@ -9,7 +9,7 @@ const CONFIG_PATH =`${basePath}/config.sh`;
 const filePaths = {
     blacklist: 'blacklist.txt',
     whitelist: 'whitelist.txt',
-    "custom-source": 'sources.txt',
+    "custom-source": 'custom_source.txt',
     "custom-rule": 'custom_rules.txt',
 };
 
@@ -815,7 +815,7 @@ function openEditDialog(fileType, currentLine) {
 
         const newLine = `${isDisabled ? '# OFF # ' : ''}${newDomain}${newName ? ' # ' + newName : ''}`
         const targetFile = `${basePath}/${filePaths[fileType]}`;
-        const escapeLine = (line) => line.replace(/[\/&]/g, '\\$&');
+        const escapeLine = (line) => line.replace(/[.*+?^${}()|[\]\\/&]/g, '\\$&');
 
         const result = await exec(`sed -i 's|${escapeLine(currentLine)}|${escapeLine(newLine)}|' "${targetFile}"`);
         if (result.errno === 0) {
@@ -975,6 +975,10 @@ function setupProfile() {
     const profileMenu = document.getElementById('profile-menu');
     const profileText = document.getElementById('profile-text');
     const loadingOverlay = document.getElementById('loading-overlay');
+    const menuItems = Array.from(profileMenu.querySelectorAll('md-menu-item'));
+    const availableProfiles = menuItems.map(item => item.getAttribute('value'));
+    const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+    const normalizeProfile = (profileName) => availableProfiles.includes(profileName) ? profileName : 'default';
 
     profileBox.onclick = (e) => {
         e.stopImmediatePropagation();
@@ -982,28 +986,30 @@ function setupProfile() {
     }
 
     const setActiveProfile = (profileName) => {
-        profileText.textContent = profileName;
-        profileMenu.querySelectorAll('md-menu-item').forEach(item => item.removeAttribute('selected'));
-        profileMenu.querySelector(`md-menu-item[value="${profileName.toLowerCase()}"]`).setAttribute('selected', '');
+        const normalizedProfile = normalizeProfile(profileName.toLowerCase());
+        profileText.textContent = capitalize(normalizedProfile);
+        menuItems.forEach(item => item.removeAttribute('selected'));
+        const selectedItem = profileMenu.querySelector(`md-menu-item[value="${normalizedProfile}"]`);
+        if (selectedItem) selectedItem.setAttribute('selected', '');
     }
 
     exec(`grep "^profile=" ${CONFIG_PATH} | cut -d'=' -f2 || echo 'default'`).then((result) => {
         if (result.errno !== 0) return;
-        const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-        setActiveProfile(capitalize(result.stdout.trim()));
+        setActiveProfile(result.stdout.trim());
     });
 
-    profileMenu.querySelectorAll('md-menu-item').forEach(item => {
+    menuItems.forEach(item => {
         item.onclick = () => {
+            const profileValue = item.getAttribute('value');
             loadingOverlay.classList.add('show');
-            const result = spawn(`sh ${modulePath}/rmlwk.sh --profile ${item.textContent.toLowerCase()}`);
+            const result = spawn(`sh ${modulePath}/rmlwk.sh --profile ${profileValue}`);
             result.on('exit', (code) => {
                 loadingOverlay.classList.remove('show');
                 if (code !== 0 && !import.meta.env.DEV) {
                     showPrompt(`Failed to change profile to ${item.textContent}`);
                     return;
                 }
-                setActiveProfile(item.textContent);
+                setActiveProfile(profileValue);
             });
         }
     });
