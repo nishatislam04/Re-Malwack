@@ -28,15 +28,14 @@ rmlwk_banner() {
     if [ "$(date +%m%d)" = "0401" ]; then
         cat "$MODDIR/lib/banner/remalware"
     else
-        random_index=$((($$ % 2) + 1))
-        cat "$MODDIR/lib/banner/banner$random_index"
+        cat "$MODDIR/lib/banner/banner"
     fi
     printf '\033[0m'
     update_status
     echo ""
     echo "$version - $status_msg"
     printf '\033[0;31m'
-    echo "================================================================="
+    echo "=================================================="
     printf '\033[0m'
 }
 

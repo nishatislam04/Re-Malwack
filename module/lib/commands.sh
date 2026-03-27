@@ -626,24 +626,58 @@ cmd_update_hosts() {
 }
 
 show_help() {
-    echo ""
-    echo "[i] Usage: rmlwk [--argument] OPTIONAL: [--quiet]"
-    echo "--update-hosts, -u: Update the hosts file."
-    echo "--profile, -p <default|lite|balanced|aggressive>: Switch adblock level profile."
-    echo "--auto-update, -a <enable|disable>: Toggle auto hosts update."
-    echo "--custom-source, -c <add|remove|edit> ...: Add/remove/edit custom hosts sources."
-    echo "--custom-rule, -cr <add|remove> <IP> <domain>: Add or remove custom hosts rules."
-    echo "--reset, -r: Reset hosts file to default."
-    echo "--query-domain, -q <domain>: Query if a domain is blocked, redirected, or not blocked."
-    echo "--adblock-switch, -as: Toggle protections on/off."
-    echo "--block-trackers, -bt <disable>, block trackers, use disable to unblock."
-    echo "--block-porn, -bp <disable>: Block pornographic sites, use disable to unblock."
-    echo "--block-gambling, -bg <disable>: Block gambling sites, use disable to unblock."
-    echo "--block-fakenews, -bf <disable>: Block fake news sites, use disable to unblock."
-    echo "--block-social, -bs <disable>: Block social media sites, use disable to unblock."
-    echo "--whitelist, -w <add|remove> <domain|pattern> <domain2> ...: Whitelist domain(s)."
-    echo "--blacklist, -b <add|remove> <domain1> <domain2> ...: Blacklist domain(s)."
-    echo "--export-logs, -e: Export logs to a tarball in Download directory."
-    echo "--help, -h: Display help."
+    cat << EOC
+[i] Usage: rmlwk [--argument] OPTIONAL: [--quiet]
+  --update-hosts, -u
+    Update the hosts file.
+
+  --profile, -p <default|lite|balanced|aggressive>
+    Switch adblock level profile.
+
+  --auto-update, -a <enable|disable>
+    Toggle auto hosts update.
+
+  --custom-source, -c <add|remove|edit> ...
+    Add/remove/edit custom hosts sources.
+
+  --custom-rule, -cr <add|remove> <IP> <domain>
+    Add or remove custom hosts rules.
+
+  --reset, -r
+    Reset hosts file to default.
+
+  --query-domain, -q <domain>
+    Query if a domain is blocked, redirected, or not blocked.
+
+  --adblock-switch, -as
+    Toggle protections on/off.
+
+  --block-trackers, -bt <disable>
+    Block trackers, use disable to unblock.
+
+  --block-porn, -bp <disable>
+    Block pornographic sites, use disable to unblock.
+
+  --block-gambling, -bg <disable>
+    Block gambling sites, use disable to unblock.
+
+  --block-fakenews, -bf <disable>
+    Block fake news sites, use disable to unblock.
+
+  --block-social, -bs <disable>
+    Block social media sites, use disable to unblock.
+
+  --whitelist, -w <add|remove> <domain|pattern> <domain2> ...
+    Whitelist domain(s).
+
+  --blacklist, -b <add|remove> <domain1> <domain2> ...
+    Blacklist domain(s).
+
+  --export-logs, -e
+    Export logs to a tarball in Download directory.
+
+  --help, -h
+    Display help.
+EOC
     printf '\033[0;31m Example command: su -c rmlwk --update-hosts\033[0m\n'
 }
